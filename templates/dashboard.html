@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Long/Short Strategy MVP - Educational Platform</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Legal Disclaimer Banner -->
+        <div class="disclaimer-banner">
+            <div class="disclaimer-content">
+                <i class="fas fa-exclamation-triangle"></i>
+                <div class="disclaimer-text">
+                    <strong>EDUCATIONAL PLATFORM NOTICE:</strong> This platform provides general investment information for educational purposes only. 
+                    Nothing on this platform constitutes personalized investment advice. All investment decisions are made solely by you. 
+                    <a href="#" onclick="showFullDisclaimer()" class="disclaimer-link">View Full Disclaimer</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="header-left">
+                    <h1>AI Long/Short Strategy MVP</h1>
+                    <div class="platform-badge">Educational Platform</div>
+                </div>
+                <div class="header-right">
+                    <div class="broker-selector">
+                        <label for="brokerSelect">Choose Broker:</label>
+                        <select id="brokerSelect" onchange="switchBroker()">
+                            <option value="alpaca">Alpaca (US Markets)</option>
+                            <option value="swissquote">Swissquote (Global Markets)</option>
+                        </select>
+                        <button id="brokerSetupBtn" onclick="showBrokerSetup()">
+                            <i class="fas fa-cog"></i> Setup
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <main class="dashboard">
+            <!-- Strategy Overview -->
+            <section class="card strategy-overview">
+                <h2><i class="fas fa-robot"></i> Strategy Overview</h2>
+                <div class="strategy-disclaimer">
+                    <i class="fas fa-info-circle"></i>
+                    <span>This strategy information is for educational purposes only and does not constitute investment advice.</span>
+                </div>
+                <div id="strategyInfo" class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading strategy information...</p>
+                </div>
+            </section>
+
+            <!-- Portfolio Allocation -->
+            <section class="card portfolio-allocation">
+                <h2><i class="fas fa-pie-chart"></i> Portfolio Allocation Tool</h2>
+                <div class="tool-disclaimer">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span>Educational tool for learning about portfolio allocation concepts. Not personalized recommendations.</span>
+                </div>
+                <div class="allocation-controls">
+                    <div class="input-group">
+                        <label for="portfolioValue">Total Portfolio Value ($)</label>
+                        <input type="number" id="portfolioValue" value="100000" min="1000" step="1000">
+                    </div>
+                    <div class="input-group">
+                        <label for="allocationPercentage">Allocation to AI Long/Short (%)</label>
+                        <input type="range" id="allocationPercentage" min="0" max="100" value="60" step="5">
+                        <span id="allocationValue">60%</span>
+                    </div>
+                    <div class="allocation-summary">
+                        <div class="summary-item">
+                            <span class="label">Allocated Amount:</span>
+                            <span id="allocatedAmount" class="value">$60,000</span>
+                        </div>
+                    </div>
+                    <button id="calculateOrders" class="btn btn-primary">
+                        <i class="fas fa-calculator"></i> Calculate Trade Orders
+                    </button>
+                </div>
+            </section>
+
+            <!-- Trade Orders -->
+            <section class="card trade-orders">
+                <h2><i class="fas fa-list-alt"></i> Generated Trade Orders</h2>
+                <div class="orders-disclaimer">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span>These are educational examples only. Execute trades independently through your chosen broker after your own research.</span>
+                </div>
+                <div id="ordersContainer" class="orders-placeholder">
+                    <p>Adjust your portfolio allocation above to generate trade orders.</p>
+                </div>
+                <div class="orders-actions" id="ordersActions" style="display: none;">
+                    <button id="executeOrders" class="btn btn-success">
+                        <i class="fas fa-play"></i> Execute All Orders (Demo)
+                    </button>
+                    <button id="exportOrders" class="btn btn-secondary">
+                        <i class="fas fa-download"></i> Export Orders
+                    </button>
+                </div>
+            </section>
+
+            <!-- Performance Tracking -->
+            <section class="card performance-tracking">
+                <h2><i class="fas fa-chart-area"></i> Performance Tracking</h2>
+                <div class="performance-disclaimer">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Educational performance tracking. Past performance does not guarantee future results.</span>
+                </div>
+                <div id="performanceContainer" class="performance-placeholder">
+                    <p>Execute orders to start tracking performance.</p>
+                </div>
+                <button id="refreshPerformance" class="btn btn-secondary" style="display: none;">
+                    <i class="fas fa-sync-alt"></i> Refresh Performance
+                </button>
+            </section>
+
+            <!-- Account Status -->
+            <section class="card account-status">
+                <h2><i class="fas fa-wallet"></i> Account Status</h2>
+                <div id="accountInfo" class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading account information...</p>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-info">
+                    <p>AI Long/Short Strategy MVP - Educational Platform</p>
+                    <p>Powered by <span id="footer-broker">Alpaca Markets / Swissquote</span> API</p>
+                </div>
+                <div class="footer-disclaimer">
+                    <p><strong>Important:</strong> This platform is for educational purposes only. Not investment advice. 
+                    All investment decisions are your responsibility. Consult qualified professionals before investing.</p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Full Disclaimer Modal -->
+    <div id="disclaimerModal" class="modal">
+        <div class="modal-content disclaimer-modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-exclamation-triangle"></i> Important Legal Disclaimer</h3>
+                <span class="close" onclick="closeDisclaimer()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="disclaimer-section">
+                    <h4>Educational Platform Notice</h4>
+                    <p>This platform is an educational investment club that provides general investment information for learning purposes only. Nothing on this platform constitutes personalized investment advice, financial planning, or recommendations tailored to your individual circumstances.</p>
+                </div>
+                
+                <div class="disclaimer-section">
+                    <h4>Investment Risks</h4>
+                    <p>All investments carry risk of loss, including total loss of capital. Past performance does not guarantee future results. Market conditions can change rapidly and significantly impact investment performance.</p>
+                </div>
+                
+                <div class="disclaimer-section">
+                    <h4>Your Responsibility</h4>
+                    <p>All investment decisions are made solely by you. You are responsible for conducting your own research, assessing your financial situation, and determining appropriate investments for your circumstances. We strongly recommend consulting qualified financial professionals.</p>
+                </div>
+                
+                <div class="disclaimer-section">
+                    <h4>No Advisory Relationship</h4>
+                    <p>No fiduciary or advisory relationship is created through your use of this platform. We do not act as your investment advisor, financial planner, or agent.</p>
+                </div>
+                
+                <div class="disclaimer-section">
+                    <h4>Trade Execution</h4>
+                    <p>All trade execution occurs independently through your chosen third-party broker. We are not responsible for trade execution, settlement, or brokerage relationships.</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeDisclaimer()" class="btn btn-primary">I Understand</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Broker Setup Modal -->
+    <div id="brokerSetupModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Broker Setup & Connection Guide</h3>
+                <span class="close" onclick="closeBrokerSetup()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="alpacaSetup" class="broker-setup-content">
+                    <div class="broker-logo">
+                        <img src="https://alpaca.markets/static/images/alpaca-logo-black.svg" alt="Alpaca" style="height: 40px;">
+                        <h4>Alpaca Markets Setup</h4>
+                    </div>
+                    
+                    <div class="setup-section">
+                        <h5><i class="fas fa-user-plus"></i> 1. Create Account</h5>
+                        <p>Don't have an Alpaca account yet?</p>
+                        <a href="https://app.alpaca.markets/signup" target="_blank" class="btn btn-primary">
+                            <i class="fas fa-external-link-alt"></i> Sign Up for Alpaca
+                        </a>
+                        <p class="setup-note">✓ Commission-free stock trading<br>✓ Paper trading for practice<br>✓ US markets access</p>
+                    </div>
+                    
+                    <div class="setup-section">
+                        <h5><i class="fas fa-key"></i> 2. Get API Keys</h5>
+                        <ol>
+                            <li>Log into your Alpaca account</li>
+                            <li>Go to "Account" → "API Keys"</li>
+                            <li>Generate new API keys for paper trading</li>
+                            <li>Copy your API Key and Secret Key</li>
+                        </ol>
+                    </div>
+                    
+                    <div class="setup-section">
+                        <h5><i class="fas fa-plug"></i> 3. Connect to Platform</h5>
+                        <div class="api-form">
+                            <input type="text" id="alpacaApiKey" placeholder="Alpaca API Key" class="form-input">
+                            <input type="password" id="alpacaSecretKey" placeholder="Alpaca Secret Key" class="form-input">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="alpacaPaperMode" checked> Use Paper Trading (Recommended)
+                            </label>
+                            <button onclick="connectAlpaca()" class="btn btn-success">
+                                <i class="fas fa-link"></i> Connect Alpaca
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="swissquoteSetup" class="broker-setup-content" style="display: none;">
+                    <div class="broker-logo">
+                        <img src="https://www.swissquote.com/sqw/images/logo-swissquote.svg" alt="Swissquote" style="height: 40px;">
+                        <h4>Swissquote Setup</h4>
+                    </div>
+                    
+                    <div class="setup-section">
+                        <h5><i class="fas fa-user-plus"></i> 1. Create Account</h5>
+                        <p>Don't have a Swissquote account yet?</p>
+                        <a href="https://en.swissquote.com/trading/open-account" target="_blank" class="btn btn-primary">
+                            <i class="fas fa-external-link-alt"></i> Sign Up for Swissquote
+                        </a>
+                        <p class="setup-note">✓ Global markets access<br>✓ European regulation<br>✓ Multi-currency support</p>
+                    </div>
+                    
+                    <div class="setup-section">
+                        <h5><i class="fas fa-key"></i> 2. Request API Access</h5>
+                        <ol>
+                            <li>Contact Swissquote customer service</li>
+                            <li>Request OW Trading API access</li>
+                            <li>Complete professional client assessment</li>
+                            <li>Receive OAuth2 credentials</li>
+                        </ol>
+                        <p class="setup-note"><strong>Note:</strong> API access requires professional client status and may take 1-2 business days to approve.</p>
+                    </div>
+                    
+                    <div class="setup-section">
+                        <h5><i class="fas fa-plug"></i> 3. Connect to Platform</h5>
+                        <div class="api-form">
+                            <input type="text" id="swissquoteClientId" placeholder="Swissquote Client ID" class="form-input">
+                            <input type="password" id="swissquoteClientSecret" placeholder="Swissquote Client Secret" class="form-input">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="swissquoteDemoMode" checked> Use Demo Mode (Recommended)
+                            </label>
+                            <button onclick="connectSwissquote()" class="btn btn-success">
+                                <i class="fas fa-link"></i> Connect Swissquote
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="setup-footer">
+                    <div class="security-notice">
+                        <i class="fas fa-shield-alt"></i>
+                        <strong>Security Notice:</strong> Your API credentials are stored locally and used only for educational demonstrations. 
+                        We recommend using paper trading or demo modes for safety.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Order Execution Results -->
+    <div id="resultsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Order Execution Results</h3>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Results will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>
+

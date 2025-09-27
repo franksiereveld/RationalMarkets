@@ -1,0 +1,13 @@
+build:
+  docker:
+    web: Dockerfile
+
+run:
+  web: python app.py
+
+release:
+  image: web
+  command:
+    - echo "AI Long/Short Investment Club - Educational Platform"
+    - echo "Deployment completed successfully"
+

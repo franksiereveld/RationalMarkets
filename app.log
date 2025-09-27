@@ -1,0 +1,23 @@
+⚠️  Warning: Alpaca API credentials not found in environment variables
+   Set ALPACA_API_KEY and ALPACA_SECRET_KEY to enable live trading
+🚀 Starting Global AI Long/Short Strategy with Alpaca Markets
+📊 Dashboard available at: http://localhost:5000
+🌍 Broker: Alpaca Markets (United States/Global)
+💱 Currencies: Multi-Currency (USD, EUR)
+⚠️  Running in demo mode (no API connection)
+   To enable live trading, set environment variables:
+   export ALPACA_API_KEY='your_paper_api_key'
+   export ALPACA_SECRET_KEY='your_paper_secret_key'
+🚀 Starting AI Long/Short Strategy MVP
+📊 Dashboard available at: http://localhost:5000
+✅ Connected to Alpaca Paper Trading API
+ * Serving Flask app 'app'
+ * Debug mode: on
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://169.254.0.21:5000
+[33mPress CTRL+C to quit[0m
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 632-447-118
