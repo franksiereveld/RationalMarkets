@@ -36,10 +36,8 @@ jobs:
           # Create static build directory
           mkdir -p _site
           
-          # Copy HTML files directly
-          cp index.html _site/
-          cp strategy-enhanced.html _site/
-          cp ai-strategy.html _site/
+          # Copy all HTML files
+          cp *.html _site/ 2>/dev/null || true
           
           # Copy static assets if they exist
           if [ -d "static" ]; then
