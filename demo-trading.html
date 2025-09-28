@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo Trading - RationalMarkets</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .trading-dashboard {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .portfolio-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .portfolio-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+        .position-row {
+            border-left: 4px solid transparent;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .position-row:hover {
+            background-color: #f8f9fa;
+            border-left-color: #007bff;
+        }
+        .position-long {
+            border-left-color: #28a745;
+        }
+        .position-short {
+            border-left-color: #dc3545;
+        }
+        .order-form {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 2rem;
+        }
+        .order-preview {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+        .risk-indicator {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin: 0.5rem 0;
+        }
+        .risk-low { background: #d4edda; color: #155724; }
+        .risk-medium { background: #fff3cd; color: #856404; }
+        .risk-high { background: #f8d7da; color: #721c24; }
+        .price-positive { color: #28a745; }
+        .price-negative { color: #dc3545; }
+        .chart-container {
+            height: 300px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 1rem 0;
+        }
+        .order-book {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+        .bid-price { color: #28a745; }
+        .ask-price { color: #dc3545; }
+        .execution-animation {
+            animation: executeOrder 2s ease-in-out;
+        }
+        @keyframes executeOrder {
+            0% { background-color: transparent; }
+            50% { background-color: #28a745; color: white; }
+            100% { background-color: transparent; }
+        }
+        .demo-badge {
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="index.html">
+                <i class="fas fa-robot me-2"></i>RationalMarkets
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="index.html">
+                    <i class="fas fa-home me-1"></i>Home
+                </a>
+                <a class="nav-link" href="strategy-enhanced.html">
+                    <i class="fas fa-chart-line me-1"></i>AI Strategy
+                </a>
+                <a class="nav-link" href="broker-selection.html">
+                    <i class="fas fa-handshake me-1"></i>Brokers
+                </a>
+                <a class="nav-link active" href="#" style="color: #ffd700;">
+                    <i class="fas fa-chart-bar me-1"></i>Demo Trading
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header -->
+    <section class="bg-primary text-white py-4">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <div class="demo-badge mb-3">
+                        <i class="fas fa-graduation-cap me-2"></i>EDUCATIONAL DEMO - NO REAL MONEY
+                    </div>
+                    <h1 class="display-6 fw-bold mb-3">
+                        <i class="fas fa-chart-bar me-3"></i>Demo Trading Platform
+                    </h1>
+                    <p class="lead mb-0">
+                        Experience realistic order execution and portfolio management in a safe educational environment.
+                    </p>
+                </div>
+                <div class="col-lg-4 text-center">
+                    <div class="bg-white bg-opacity-10 rounded-3 p-3">
+                        <i class="fas fa-shield-alt fa-3x mb-2"></i>
+                        <h6>100% Safe Demo</h6>
+                        <p class="small mb-0">No real money at risk</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Trading Dashboard -->
+    <section class="py-4">
+        <div class="container">
+            <div class="trading-dashboard">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <h4 id="portfolio-value">$100,000.00</h4>
+                        <small>Portfolio Value</small>
+                    </div>
+                    <div class="col-md-3">
+                        <h4 id="buying-power" class="text-warning">$50,000.00</h4>
+                        <small>Buying Power</small>
+                    </div>
+                    <div class="col-md-3">
+                        <h4 id="day-pnl" class="text-success">+$1,250.00</h4>
+                        <small>Day P&L</small>
+                    </div>
+                    <div class="col-md-3">
+                        <h4 id="total-pnl" class="text-info">+$2,500.00</h4>
+                        <small>Total P&L</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Trading Interface -->
+    <section class="py-4">
+        <div class="container">
+            <div class="row">
+                <!-- Order Entry -->
+                <div class="col-lg-4">
+                    <div class="portfolio-card p-4">
+                        <h5 class="mb-4">
+                            <i class="fas fa-plus-circle me-2"></i>Place Demo Order
+                        </h5>
+                        
+                        <div class="order-form">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Symbol</label>
+                                <select class="form-select" id="order-symbol" onchange="updateQuote()">
+                                    <option value="">Select a symbol...</option>
+                                    <option value="NVDA">NVDA - NVIDIA Corporation</option>
+                                    <option value="MSFT">MSFT - Microsoft Corporation</option>
+                                    <option value="GOOGL">GOOGL - Alphabet Inc.</option>
+                                    <option value="TSLA">TSLA - Tesla Inc.</option>
+                                    <option value="AAPL">AAPL - Apple Inc.</option>
+                                </select>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-6">
+                                    <label class="form-label fw-bold">Side</label>
+                                    <select class="form-select" id="order-side">
+                                        <option value="buy">Buy (Long)</option>
+                                        <option value="sell">Sell (Short)</option>
+                                    </select>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label fw-bold">Order Type</label>
+                                    <select class="form-select" id="order-type">
+                                        <option value="market">Market</option>
+                                        <option value="limit">Limit</option>
+                                        <option value="stop">Stop</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-6">
+                                    <label class="form-label fw-bold">Quantity</label>
+                                    <input type="number" class="form-control" id="order-quantity" value="10" min="1" onchange="updateOrderPreview()">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label fw-bold">Price</label>
+                                    <input type="number" class="form-control" id="order-price" step="0.01" onchange="updateOrderPreview()">
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Time in Force</label>
+                                <select class="form-select" id="order-tif">
+                                    <option value="day">Day</option>
+                                    <option value="gtc">Good Till Canceled</option>
+                                    <option value="ioc">Immediate or Cancel</option>
+                                </select>
+                            </div>
+
+                            <div id="order-preview" class="order-preview" style="display: none;">
+                                <h6 class="mb-3">Order Preview</h6>
+                                <div id="preview-content">
+                                    <!-- Will be populated by JavaScript -->
+                                </div>
+                            </div>
+
+                            <div id="risk-assessment" class="mb-3">
+                                <!-- Will be populated by JavaScript -->
+                            </div>
+
+                            <button class="btn btn-success btn-lg w-100" onclick="executeOrder()" id="execute-btn" disabled>
+                                <i class="fas fa-paper-plane me-2"></i>Execute Demo Order
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Market Data & Chart -->
+                <div class="col-lg-4">
+                    <div class="portfolio-card p-4">
+                        <h5 class="mb-4">
+                            <i class="fas fa-chart-line me-2"></i>Market Data
+                        </h5>
+                        
+                        <div id="quote-display">
+                            <div class="text-center text-muted">
+                                <i class="fas fa-search fa-3x mb-3"></i>
+                                <p>Select a symbol to view market data</p>
+                            </div>
+                        </div>
+
+                        <div class="chart-container">
+                            <div class="text-center text-muted">
+                                <i class="fas fa-chart-area fa-3x mb-3"></i>
+                                <p>Price Chart (Demo)</p>
+                            </div>
+                        </div>
+
+                        <div class="order-book mt-4">
+                            <h6>Order Book (Demo)</h6>
+                            <div class="row">
+                                <div class="col-6">
+                                    <small class="text-muted">Bids</small>
+                                    <div id="bid-orders">
+                                        <!-- Will be populated by JavaScript -->
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted">Asks</small>
+                                    <div id="ask-orders">
+                                        <!-- Will be populated by JavaScript -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Portfolio Positions -->
+                <div class="col-lg-4">
+                    <div class="portfolio-card p-4">
+                        <h5 class="mb-4">
+                            <i class="fas fa-briefcase me-2"></i>Current Positions
+                        </h5>
+                        
+                        <div id="positions-list">
+                            <div class="position-row position-long p-3 mb-2 rounded" onclick="selectPosition('NVDA')">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">NVDA</h6>
+                                        <small class="text-muted">50 shares</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="price-positive">+$1,250</div>
+                                        <small class="text-muted">+2.5%</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="position-row position-short p-3 mb-2 rounded" onclick="selectPosition('HRB')">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">HRB</h6>
+                                        <small class="text-muted">-25 shares</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="price-positive">+$375</div>
+                                        <small class="text-muted">+1.8%</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="position-row position-long p-3 mb-2 rounded" onclick="selectPosition('MSFT')">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">MSFT</h6>
+                                        <small class="text-muted">30 shares</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="price-negative">-$180</div>
+                                        <small class="text-muted">-0.5%</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <h6>Portfolio Allocation</h6>
+                            <div class="progress mb-2" style="height: 20px;">
+                                <div class="progress-bar bg-success" style="width: 60%">Long 60%</div>
+                                <div class="progress-bar bg-danger" style="width: 40%">Short 40%</div>
+                            </div>
+                            <small class="text-muted">Target: 60% Long, 40% Short</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Recent Orders -->
+    <section class="py-4">
+        <div class="container">
+            <div class="portfolio-card p-4">
+                <h5 class="mb-4">
+                    <i class="fas fa-history me-2"></i>Recent Demo Orders
+                </h5>
+                
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Symbol</th>
+                                <th>Side</th>
+                                <th>Quantity</th>
+                                <th>Price</th>
+                                <th>Status</th>
+                                <th>P&L</th>
+                            </tr>
+                        </thead>
+                        <tbody id="orders-table">
+                            <tr>
+                                <td>10:30:15</td>
+                                <td>NVDA</td>
+                                <td><span class="badge bg-success">BUY</span></td>
+                                <td>10</td>
+                                <td>$875.50</td>
+                                <td><span class="badge bg-success">FILLED</span></td>
+                                <td class="price-positive">+$250</td>
+                            </tr>
+                            <tr>
+                                <td>09:45:22</td>
+                                <td>HRB</td>
+                                <td><span class="badge bg-danger">SELL</span></td>
+                                <td>25</td>
+                                <td>$58.90</td>
+                                <td><span class="badge bg-success">FILLED</span></td>
+                                <td class="price-positive">+$125</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Demo market data
+        const marketData = {
+            NVDA: { price: 875.50, bid: 875.25, ask: 875.75, change: 2.5 },
+            MSFT: { price: 415.20, bid: 415.10, ask: 415.30, change: -0.5 },
+            GOOGL: { price: 138.75, bid: 138.70, ask: 138.80, change: 1.2 },
+            TSLA: { price: 245.80, bid: 245.60, ask: 246.00, change: -1.8 },
+            AAPL: { price: 175.25, bid: 175.20, ask: 175.30, change: 0.8 }
+        };
+
+        let currentSymbol = null;
+        let orderCount = 0;
+
+        function updateQuote() {
+            const symbol = document.getElementById('order-symbol').value;
+            const quoteDisplay = document.getElementById('quote-display');
+            
+            if (!symbol) {
+                quoteDisplay.innerHTML = `
+                    <div class="text-center text-muted">
+                        <i class="fas fa-search fa-3x mb-3"></i>
+                        <p>Select a symbol to view market data</p>
+                    </div>
+                `;
+                return;
+            }
+
+            currentSymbol = symbol;
+            const data = marketData[symbol];
+            const changeClass = data.change >= 0 ? 'price-positive' : 'price-negative';
+            const changeIcon = data.change >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
+
+            quoteDisplay.innerHTML = `
+                <div class="text-center mb-4">
+                    <h3 class="mb-1">${symbol}</h3>
+                    <h2 class="${changeClass}">$${data.price.toFixed(2)}</h2>
+                    <div class="${changeClass}">
+                        <i class="fas ${changeIcon} me-1"></i>
+                        ${data.change > 0 ? '+' : ''}${data.change}%
+                    </div>
+                </div>
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="bid-price">
+                            <strong>Bid: $${data.bid.toFixed(2)}</strong>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="ask-price">
+                            <strong>Ask: $${data.ask.toFixed(2)}</strong>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Update order price
+            document.getElementById('order-price').value = data.price.toFixed(2);
+            
+            // Update order book
+            updateOrderBook(symbol);
+            
+            // Update order preview
+            updateOrderPreview();
+        }
+
+        function updateOrderBook(symbol) {
+            const data = marketData[symbol];
+            const bidOrders = document.getElementById('bid-orders');
+            const askOrders = document.getElementById('ask-orders');
+
+            // Generate fake order book data
+            let bidHtml = '';
+            let askHtml = '';
+
+            for (let i = 0; i < 5; i++) {
+                const bidPrice = (data.bid - i * 0.05).toFixed(2);
+                const askPrice = (data.ask + i * 0.05).toFixed(2);
+                const bidSize = Math.floor(Math.random() * 500) + 100;
+                const askSize = Math.floor(Math.random() * 500) + 100;
+
+                bidHtml += `<div class="bid-price">$${bidPrice} (${bidSize})</div>`;
+                askHtml += `<div class="ask-price">$${askPrice} (${askSize})</div>`;
+            }
+
+            bidOrders.innerHTML = bidHtml;
+            askOrders.innerHTML = askHtml;
+        }
+
+        function updateOrderPreview() {
+            const symbol = document.getElementById('order-symbol').value;
+            const side = document.getElementById('order-side').value;
+            const quantity = parseInt(document.getElementById('order-quantity').value) || 0;
+            const price = parseFloat(document.getElementById('order-price').value) || 0;
+            const orderType = document.getElementById('order-type').value;
+
+            const preview = document.getElementById('order-preview');
+            const previewContent = document.getElementById('preview-content');
+            const executeBtn = document.getElementById('execute-btn');
+            const riskAssessment = document.getElementById('risk-assessment');
+
+            if (!symbol || !quantity || !price) {
+                preview.style.display = 'none';
+                executeBtn.disabled = true;
+                riskAssessment.innerHTML = '';
+                return;
+            }
+
+            const totalValue = quantity * price;
+            const sideText = side === 'buy' ? 'BUY' : 'SELL';
+            const sideClass = side === 'buy' ? 'text-success' : 'text-danger';
+
+            previewContent.innerHTML = `
+                <div class="row">
+                    <div class="col-6">
+                        <strong>Symbol:</strong> ${symbol}<br>
+                        <strong>Side:</strong> <span class="${sideClass}">${sideText}</span><br>
+                        <strong>Quantity:</strong> ${quantity}
+                    </div>
+                    <div class="col-6">
+                        <strong>Price:</strong> $${price.toFixed(2)}<br>
+                        <strong>Type:</strong> ${orderType.toUpperCase()}<br>
+                        <strong>Total:</strong> $${totalValue.toLocaleString()}
+                    </div>
+                </div>
+            `;
+
+            // Risk assessment
+            let riskLevel = 'low';
+            let riskText = 'Low Risk';
+            let riskClass = 'risk-low';
+
+            if (totalValue > 50000) {
+                riskLevel = 'high';
+                riskText = 'High Risk - Large Position';
+                riskClass = 'risk-high';
+            } else if (totalValue > 20000) {
+                riskLevel = 'medium';
+                riskText = 'Medium Risk';
+                riskClass = 'risk-medium';
+            }
+
+            riskAssessment.innerHTML = `
+                <div class="risk-indicator ${riskClass}">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    ${riskText} - $${totalValue.toLocaleString()}
+                </div>
+            `;
+
+            preview.style.display = 'block';
+            executeBtn.disabled = false;
+        }
+
+        function executeOrder() {
+            const symbol = document.getElementById('order-symbol').value;
+            const side = document.getElementById('order-side').value;
+            const quantity = parseInt(document.getElementById('order-quantity').value);
+            const price = parseFloat(document.getElementById('order-price').value);
+            const orderType = document.getElementById('order-type').value;
+
+            // Simulate order execution
+            const executeBtn = document.getElementById('execute-btn');
+            executeBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Executing...';
+            executeBtn.disabled = true;
+
+            setTimeout(() => {
+                // Add to orders table
+                addOrderToTable(symbol, side, quantity, price);
+                
+                // Reset form
+                resetOrderForm();
+                
+                // Show success message
+                showExecutionSuccess(symbol, side, quantity, price);
+                
+                executeBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Execute Demo Order';
+                executeBtn.disabled = true;
+            }, 2000);
+        }
+
+        function addOrderToTable(symbol, side, quantity, price) {
+            const ordersTable = document.getElementById('orders-table');
+            const now = new Date();
+            const timeString = now.toLocaleTimeString();
+            const sideText = side === 'buy' ? 'BUY' : 'SELL';
+            const sideClass = side === 'buy' ? 'bg-success' : 'bg-danger';
+            const pnl = Math.random() > 0.5 ? '+' : '-';
+            const pnlAmount = Math.floor(Math.random() * 500) + 50;
+            const pnlClass = pnl === '+' ? 'price-positive' : 'price-negative';
+
+            const newRow = document.createElement('tr');
+            newRow.className = 'execution-animation';
+            newRow.innerHTML = `
+                <td>${timeString}</td>
+                <td>${symbol}</td>
+                <td><span class="badge ${sideClass}">${sideText}</span></td>
+                <td>${quantity}</td>
+                <td>$${price.toFixed(2)}</td>
+                <td><span class="badge bg-success">FILLED</span></td>
+                <td class="${pnlClass}">${pnl}$${pnlAmount}</td>
+            `;
+
+            ordersTable.insertBefore(newRow, ordersTable.firstChild);
+        }
+
+        function resetOrderForm() {
+            document.getElementById('order-symbol').value = '';
+            document.getElementById('order-quantity').value = '10';
+            document.getElementById('order-price').value = '';
+            document.getElementById('order-preview').style.display = 'none';
+            document.getElementById('risk-assessment').innerHTML = '';
+            document.getElementById('quote-display').innerHTML = `
+                <div class="text-center text-muted">
+                    <i class="fas fa-search fa-3x mb-3"></i>
+                    <p>Select a symbol to view market data</p>
+                </div>
+            `;
+        }
+
+        function showExecutionSuccess(symbol, side, quantity, price) {
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-success alert-dismissible fade show';
+            alert.innerHTML = `
+                <i class="fas fa-check-circle me-2"></i>
+                <strong>Order Executed!</strong> ${side.toUpperCase()} ${quantity} shares of ${symbol} at $${price.toFixed(2)}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.querySelector('.container').insertBefore(alert, document.querySelector('.container').firstChild);
+            
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+
+        function selectPosition(symbol) {
+            document.getElementById('order-symbol').value = symbol;
+            updateQuote();
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add event listeners
+            document.getElementById('order-symbol').addEventListener('change', updateQuote);
+            document.getElementById('order-quantity').addEventListener('input', updateOrderPreview);
+            document.getElementById('order-price').addEventListener('input', updateOrderPreview);
+            document.getElementById('order-side').addEventListener('change', updateOrderPreview);
+            document.getElementById('order-type').addEventListener('change', updateOrderPreview);
+
+            // Simulate real-time price updates
+            setInterval(() => {
+                Object.keys(marketData).forEach(symbol => {
+                    const change = (Math.random() - 0.5) * 2; // Random change between -1 and 1
+                    marketData[symbol].price += change;
+                    marketData[symbol].bid = marketData[symbol].price - 0.25;
+                    marketData[symbol].ask = marketData[symbol].price + 0.25;
+                });
+
+                // Update current quote if symbol is selected
+                if (currentSymbol) {
+                    updateQuote();
+                }
+            }, 5000);
+        });
+    </script>
+</body>
+</html>
