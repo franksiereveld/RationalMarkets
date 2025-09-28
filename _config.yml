@@ -1,0 +1,37 @@
+# Jekyll configuration for GitHub Pages
+title: RationalMarkets
+description: AI Long/Short Investment Educational Platform
+
+# Exclude problematic directories and files from Jekyll processing
+exclude:
+  - venv/
+  - __pycache__/
+  - "*.py"
+  - "*.pyc"
+  - requirements.txt
+  - Dockerfile
+  - docker-compose.yml
+  - Procfile
+  - heroku.yml
+  - vercel.json
+  - app.yaml
+  - .github/
+  - README.md
+  - LICENSE
+  - CONTRIBUTING.md
+  - DEPLOYMENT.md
+  - BROKER_INTEGRATION.md
+  - LEGAL_DISCLAIMER.md
+
+# Include only HTML files and assets
+include:
+  - "*.html"
+
+# Disable Jekyll plugins that might cause issues
+plugins: []
+
+# Use minimal theme
+theme: minima
+
+# Markdown processor
+markdown: kramdown
