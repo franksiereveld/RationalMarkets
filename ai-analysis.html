@@ -362,45 +362,181 @@
             });
 
             // Long positions
-            const longPositions = document.getElementById('longPositions');
-            longPositions.innerHTML = '';
-            analysis.longPositions.forEach(position => {
-                const positionDiv = document.createElement('div');
-                positionDiv.className = 'position-card long-position';
-                positionDiv.innerHTML = `
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <div>
-                            <span class="badge bg-success me-2">${position.symbol}</span>
-                            <strong>${position.name}</strong>
-                        </div>
-                        <span class="badge bg-outline-secondary">${position.allocation}</span>
-                    </div>
-                    <p class="text-muted mb-0">${position.rationale}</p>
-                `;
-                longPositions.appendChild(positionDiv);
-            });
+            displayPositionsWithCharts(analysis.longPositions, 'longPositions', true);
 
             // Short positions
-            const shortPositions = document.getElementById('shortPositions');
-            shortPositions.innerHTML = '';
-            analysis.shortPositions.forEach(position => {
-                const positionDiv = document.createElement('div');
-                positionDiv.className = 'position-card short-position';
-                positionDiv.innerHTML = `
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <div>
-                            <span class="badge bg-danger me-2">${position.symbol}</span>
-                            <strong>${position.name}</strong>
-                        </div>
-                        <span class="badge bg-outline-secondary">${position.allocation}</span>
-                    </div>
-                    <p class="text-muted mb-0">${position.rationale}</p>
-                `;
-                shortPositions.appendChild(positionDiv);
-            });
+            displayPositionsWithCharts(analysis.shortPositions, 'shortPositions', false);
 
             // AI rationale
             document.getElementById('aiRationale').textContent = analysis.aiRationale;
+        }
+
+        function displayPositionsWithCharts(positions, containerId, isLong) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            
+            positions.forEach(position => {
+                const card = document.createElement('div');
+                card.className = `position-card ${isLong ? 'long-position' : 'short-position'}`;
+                
+                // Generate mock financial data
+                const mockData = generateMockFinancialData(position.symbol);
+                
+                card.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <span class="badge ${isLong ? 'bg-success' : 'bg-danger'}">${position.symbol}</span>
+                            <strong class="ms-2">${position.name}</strong>
+                        </div>
+                        <span class="badge bg-secondary">${position.allocation}</span>
+                    </div>
+                    
+                    <!-- Stock Chart -->
+                    <div class="mb-3">
+                        <div class="chart-container" style="height: 200px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; position: relative; overflow: hidden;">
+                            <canvas id="chart-${position.symbol}" width="100%" height="200"></canvas>
+                            <div style="position: absolute; top: 10px; left: 15px;">
+                                <small class="text-muted">6M Price Chart</small>
+                            </div>
+                            <div style="position: absolute; top: 10px; right: 15px;">
+                                <span class="badge ${mockData.priceChange >= 0 ? 'bg-success' : 'bg-danger'}">
+                                    ${mockData.priceChange >= 0 ? '+' : ''}${mockData.priceChange.toFixed(1)}%
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Financial Multiples -->
+                    <div class="row mb-3">
+                        <div class="col-3">
+                            <div class="text-center p-2" style="background: rgba(0,123,255,0.1); border-radius: 6px;">
+                                <div class="fw-bold text-primary">${mockData.pe}</div>
+                                <small class="text-muted">P/E</small>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="text-center p-2" style="background: rgba(40,167,69,0.1); border-radius: 6px;">
+                                <div class="fw-bold text-success">${mockData.ps}</div>
+                                <small class="text-muted">P/S</small>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="text-center p-2" style="background: rgba(255,193,7,0.1); border-radius: 6px;">
+                                <div class="fw-bold text-warning">${mockData.pb}</div>
+                                <small class="text-muted">P/B</small>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="text-center p-2" style="background: rgba(220,53,69,0.1); border-radius: 6px;">
+                                <div class="fw-bold text-danger">${mockData.ev_ebitda}</div>
+                                <small class="text-muted">EV/EBITDA</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Current Price & Market Cap -->
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <div class="text-center p-2" style="background: rgba(108,117,125,0.1); border-radius: 6px;">
+                                <div class="fw-bold">${mockData.price}</div>
+                                <small class="text-muted">Current Price</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center p-2" style="background: rgba(108,117,125,0.1); border-radius: 6px;">
+                                <div class="fw-bold">${mockData.marketCap}</div>
+                                <small class="text-muted">Market Cap</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Rationale -->
+                    <p class="text-muted mb-0">${position.rationale}</p>
+                `;
+                container.appendChild(card);
+                
+                // Draw the chart after the element is added to DOM
+                setTimeout(() => drawMockChart(position.symbol, mockData), 100);
+            });
+        }
+
+        function generateMockFinancialData(symbol) {
+            // Mock financial data based on symbol
+            const dataMap = {
+                'NVDA': { pe: '65.2', ps: '22.1', pb: '13.8', ev_ebitda: '45.3', price: '$875.28', marketCap: '$2.15T', priceChange: 145.7 },
+                'TSLA': { pe: '73.1', ps: '8.9', pb: '9.2', ev_ebitda: '52.7', price: '$248.50', marketCap: '$791B', priceChange: -12.3 },
+                'MSFT': { pe: '28.4', ps: '11.2', pb: '4.1', ev_ebitda: '18.9', price: '$378.85', marketCap: '$2.81T', priceChange: 23.4 },
+                'GOOGL': { pe: '21.8', ps: '4.8', pb: '3.2', ev_ebitda: '12.1', price: '$138.21', marketCap: '$1.75T', priceChange: 18.9 },
+                'PLTR': { pe: '195.4', ps: '18.7', pb: '7.3', ev_ebitda: 'N/A', price: '$23.45', marketCap: '$51.2B', priceChange: -8.7 },
+                'C3AI': { pe: 'N/A', ps: '21.3', pb: '4.8', ev_ebitda: 'N/A', price: '$28.91', marketCap: '$3.2B', priceChange: -15.2 },
+                'VIX': { pe: 'N/A', ps: 'N/A', pb: 'N/A', ev_ebitda: 'N/A', price: '$14.23', marketCap: 'N/A', priceChange: 8.4 },
+                'SQQQ': { pe: 'N/A', ps: 'N/A', pb: 'N/A', ev_ebitda: 'N/A', price: '$8.45', marketCap: '$1.8B', priceChange: -45.2 },
+                'TLPFY': { pe: '12.8', ps: '1.4', pb: '2.1', ev_ebitda: '8.9', price: '$18.67', marketCap: '$12.4B', priceChange: -5.3 },
+                'HRB': { pe: '11.2', ps: '2.1', pb: '1.8', ev_ebitda: '7.4', price: '$58.23', marketCap: '$9.8B', priceChange: 2.1 }
+            };
+            
+            return dataMap[symbol] || { pe: 'N/A', ps: 'N/A', pb: 'N/A', ev_ebitda: 'N/A', price: '$0.00', marketCap: 'N/A', priceChange: 0 };
+        }
+
+        function drawMockChart(symbol, data) {
+            const canvas = document.getElementById(`chart-${symbol}`);
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            const width = canvas.offsetWidth;
+            const height = 200;
+            canvas.width = width;
+            canvas.height = height;
+            
+            // Generate mock price data (6 months)
+            const points = 180; // 6 months of daily data
+            const priceData = [];
+            let basePrice = parseFloat(data.price.replace('$', '').replace(',', '')) || 100;
+            let currentPrice = basePrice / (1 + data.priceChange / 100); // Starting price
+            
+            for (let i = 0; i < points; i++) {
+                // Add some volatility
+                const volatility = (Math.random() - 0.5) * 0.04; // ±2% daily volatility
+                const trend = (data.priceChange / 100) / points; // Distribute total change over period
+                currentPrice *= (1 + trend + volatility);
+                priceData.push(currentPrice);
+            }
+            
+            // Draw chart
+            ctx.clearRect(0, 0, width, height);
+            
+            // Chart background
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.fillRect(0, 0, width, height);
+            
+            // Price line
+            const minPrice = Math.min(...priceData);
+            const maxPrice = Math.max(...priceData);
+            const priceRange = maxPrice - minPrice;
+            
+            ctx.beginPath();
+            ctx.strokeStyle = data.priceChange >= 0 ? '#28a745' : '#dc3545';
+            ctx.lineWidth = 2;
+            
+            priceData.forEach((price, index) => {
+                const x = (index / (points - 1)) * width;
+                const y = height - ((price - minPrice) / priceRange) * (height - 40) - 20;
+                
+                if (index === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            });
+            
+            ctx.stroke();
+            
+            // Fill area under curve
+            ctx.lineTo(width, height - 20);
+            ctx.lineTo(0, height - 20);
+            ctx.closePath();
+            ctx.fillStyle = data.priceChange >= 0 ? 'rgba(40, 167, 69, 0.1)' : 'rgba(220, 53, 69, 0.1)';
+            ctx.fill();
         }
 
         function resetForm() {
