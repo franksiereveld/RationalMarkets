@@ -1,5 +1,6 @@
+# Updated dependencies for Railway deployment
 Flask==3.0.0
 Flask-CORS==4.0.0
 openai==1.54.0
-yfinance==0.2.36
+yfinance==0.2.48
 gunicorn==21.2.0
