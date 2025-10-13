@@ -261,7 +261,8 @@
 
     <script>
         // Configuration: Set to true to use real AI API, false for mock analysis
-        const USE_REAL_AI = true;  // Real AI enabled - connected to Railway backend
+        const USE_REAL_AI = true;
+        let currentAnalysisResult = null;  // Real AI enabled - connected to Railway backend
         const API_ENDPOINT = 'https://web-production-3b184.up.railway.app/api/analyze-trade';  // Production Railway API
 
         async function analyzeTradeWithAI() {
@@ -749,6 +750,42 @@
             ctx.closePath();
             ctx.fillStyle = data.priceChange >= 0 ? 'rgba(40, 167, 69, 0.15)' : 'rgba(220, 53, 69, 0.15)';
             ctx.fill();
+        }
+
+        
+        function saveTradeToMyPositions() {
+            if (!currentAnalysisResult) {
+                alert('No analysis to save');
+                return;
+            }
+
+            // Get existing trades from localStorage
+            const trades = JSON.parse(localStorage.getItem('myTrades') || '[]');
+
+            // Create trade object
+            const trade = {
+                tradeName: document.getElementById('tradeName').value,
+                tradeDescription: document.getElementById('tradeDescription').value,
+                recommendation: currentAnalysisResult.recommendation,
+                risk: currentAnalysisResult.risk,
+                rationale: currentAnalysisResult.rationale,
+                positions: currentAnalysisResult.positions,
+                returnEstimates: currentAnalysisResult.returnEstimates,
+                createdAt: new Date().toISOString()
+            };
+
+            // Add to trades array
+            trades.unshift(trade); // Add to beginning
+
+            // Save to localStorage
+            localStorage.setItem('myTrades', JSON.stringify(trades));
+
+            // Show success message
+            alert('Trade saved to My Positions!');
+
+            // Change button text
+            document.getElementById('saveTradeBtn').innerHTML = '<i class="fas fa-check me-2"></i>Saved!';
+            document.getElementById('saveTradeBtn').disabled = true;
         }
 
         function resetForm() {
