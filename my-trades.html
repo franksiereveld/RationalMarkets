@@ -260,8 +260,11 @@
                 <button class="btn btn-outline-primary btn-lg me-3" onclick="resetForm()">
                     <i class="fas fa-plus me-2"></i>Suggest Another Trade
                 </button>
-                <button class="btn btn-success btn-lg" onclick="trackTrade()">
+                <button class="btn btn-success btn-lg me-3" onclick="trackTrade()">
                     <i class="fas fa-chart-line me-2"></i>Track This Trade
+                </button>
+                <button class="btn btn-danger btn-lg" onclick="deleteTrade()" id="deleteTradeBtn" style="display: none;">
+                    <i class="fas fa-trash me-2"></i>Delete Trade
                 </button>
             </div>
         </div>
@@ -899,6 +902,26 @@
         function trackTrade() {
             alert('Trade tracking functionality will be implemented in the next phase!');
         }
+
+        function deleteTrade() {
+            if (!currentAnalysisResult) {
+                alert('No trade to delete');
+                return;
+            }
+            
+            if (!confirm('Are you sure you want to delete this trade? This action cannot be undone.')) {
+                return;
+            }
+            
+            const trades = JSON.parse(localStorage.getItem('myTrades') || '[]');
+            const tradeName = currentAnalysisResult.tradeName;
+            const updatedTrades = trades.filter(t => t.tradeName !== tradeName);
+            localStorage.setItem('myTrades', JSON.stringify(updatedTrades));
+            
+            alert('Trade deleted successfully!');
+            resetForm();
+        }
+
     </script>
     <!-- Footer -->
     <footer class="mt-5 py-4 text-white text-center">
