@@ -68,25 +68,21 @@ def get_stock_data(ticker):
                     'price': round(quotes['close'][i], 2)
                 })
         
-        # Build response
+        # Build response (flattened structure for frontend compatibility)
         stock_data = {
             'ticker': ticker,
             'name': meta.get('longName', meta.get('shortName', ticker)),
             'currentPrice': meta.get('regularMarketPrice', 0),
-            'marketCap': meta.get('marketCap', 0),
+            'marketCap': format_market_cap(meta.get('marketCap', meta.get('regularMarketCap', 0))),
             'sixMonthReturn': round(six_month_return, 2),
             'chartData': chart_data,
-            'financialData': {
-                'currentPrice': meta.get('regularMarketPrice', 0),
-                'marketCap': format_market_cap(meta.get('marketCap', meta.get('regularMarketCap', 0))),
-                'pe': meta.get('trailingPE', None),
-                'ps': meta.get('priceToSalesTrailing12Months', None),
-                'pb': meta.get('priceToBook', None),
-                'evEbitda': meta.get('enterpriseToEbitda', None),
-                'fiftyTwoWeekHigh': meta.get('fiftyTwoWeekHigh', None),
-                'fiftyTwoWeekLow': meta.get('fiftyTwoWeekLow', None),
-                'volume': meta.get('regularMarketVolume', 0)
-            }
+            'pe': meta.get('trailingPE', None),
+            'ps': meta.get('priceToSalesTrailing12Months', None),
+            'pb': meta.get('priceToBook', None),
+            'evEbitda': meta.get('enterpriseToEbitda', None),
+            'fiftyTwoWeekHigh': meta.get('fiftyTwoWeekHigh', None),
+            'fiftyTwoWeekLow': meta.get('fiftyTwoWeekLow', None),
+            'volume': meta.get('regularMarketVolume', 0)
         }
         
         return stock_data
@@ -140,20 +136,16 @@ def get_fallback_data(ticker):
         'ticker': ticker,
         'name': ticker,
         'currentPrice': 0,
-        'marketCap': 0,
+        'marketCap': 'N/A',
         'sixMonthReturn': 0.0,
         'chartData': [],
-        'financialData': {
-            'currentPrice': 0,
-            'marketCap': 'N/A',
-            'pe': None,
-            'ps': None,
-            'pb': None,
-            'evEbitda': None,
-            'fiftyTwoWeekHigh': None,
-            'fiftyTwoWeekLow': None,
-            'volume': 0
-        },
+        'pe': None,
+        'ps': None,
+        'pb': None,
+        'evEbitda': None,
+        'fiftyTwoWeekHigh': None,
+        'fiftyTwoWeekLow': None,
+        'volume': 0,
         'error': 'Data temporarily unavailable'
     }
 
