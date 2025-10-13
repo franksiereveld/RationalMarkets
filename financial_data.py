@@ -1,175 +1,180 @@
-#!/usr/bin/env python3
 """
-Financial Data API for RationalMarkets
-Fetches real stock prices, multiples, and historical data using yfinance
+Financial data module using Manus API Hub
+Provides reliable stock data without external dependencies
 """
 
-import yfinance as yf
-from datetime import datetime, timedelta
-import time
+import sys
+import json
+from datetime import datetime
 
-def get_stock_data(symbol):
-    """
-    Fetch comprehensive stock data for a given symbol
-    
-    Returns:
-        dict: Stock data including price, multiples, and chart data
-    """
-    try:
-        # Add small delay to avoid rate limiting
-        time.sleep(0.5)
-        
-        stock = yf.Ticker(symbol)
-        
-        # Try to get basic info first
-        try:
-            info = stock.info
-        except Exception as e:
-            print(f"Warning: Could not fetch info for {symbol}: {str(e)}")
-            info = {}
-        
-        # Get historical data for 6-month chart
-        end_date = datetime.now()
-        start_date = end_date - timedelta(days=180)
-        
-        try:
-            hist = stock.history(start=start_date, end=end_date)
-        except Exception as e:
-            print(f"Warning: Could not fetch history for {symbol}: {str(e)}")
-            hist = None
-        
-        # Calculate price change
-        price_change = 0
-        if hist is not None and len(hist) > 0:
-            try:
-                first_price = hist['Close'].iloc[0]
-                last_price = hist['Close'].iloc[-1]
-                price_change = ((last_price - first_price) / first_price) * 100
-            except:
-                pass
-        
-        # Extract financial multiples with fallbacks
-        pe_ratio = info.get('trailingPE') or info.get('forwardPE')
-        ps_ratio = info.get('priceToSalesTrailing12Months')
-        pb_ratio = info.get('priceToBook')
-        ev_ebitda = info.get('enterpriseToEbitda')
-        
-        # Get current price and market cap with multiple fallbacks
-        current_price = (info.get('currentPrice') or 
-                        info.get('regularMarketPrice') or 
-                        info.get('previousClose'))
-        
-        # If we have historical data but no current price, use last close
-        if not current_price and hist is not None and len(hist) > 0:
-            try:
-                current_price = float(hist['Close'].iloc[-1])
-            except:
-                current_price = 0
-        
-        market_cap = info.get('marketCap')
-        
-        # Format market cap
-        if market_cap:
-            if market_cap >= 1e12:
-                market_cap_str = f"${market_cap/1e12:.2f}T"
-            elif market_cap >= 1e9:
-                market_cap_str = f"${market_cap/1e9:.2f}B"
-            elif market_cap >= 1e6:
-                market_cap_str = f"${market_cap/1e6:.2f}M"
-            else:
-                market_cap_str = f"${market_cap:,.0f}"
-        else:
-            market_cap_str = "N/A"
-        
-        # Prepare chart data (simplified for frontend)
-        chart_data = []
-        if hist is not None and len(hist) > 0:
-            try:
-                # Sample 50 points for chart
-                sample_size = min(50, len(hist))
-                step = max(1, len(hist) // sample_size)
-                for i in range(0, len(hist), step):
-                    chart_data.append({
-                        'date': hist.index[i].strftime('%Y-%m-%d'),
-                        'price': float(hist['Close'].iloc[i])
-                    })
-            except Exception as e:
-                print(f"Warning: Could not prepare chart data for {symbol}: {str(e)}")
-        
-        return {
-            'symbol': symbol.upper(),
-            'currentPrice': round(current_price, 2) if current_price else 0,
-            'priceChange': round(price_change, 2),
-            'marketCap': market_cap_str,
-            'multiples': {
-                'pe': round(pe_ratio, 1) if pe_ratio else None,
-                'ps': round(ps_ratio, 1) if ps_ratio else None,
-                'pb': round(pb_ratio, 1) if pb_ratio else None,
-                'evEbitda': round(ev_ebitda, 1) if ev_ebitda else None
-            },
-            'chartData': chart_data,
-            'success': True
-        }
-    
-    except Exception as e:
-        print(f"Error fetching data for {symbol}: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        return {
-            'symbol': symbol.upper(),
-            'currentPrice': 0,
-            'priceChange': 0,
-            'marketCap': 'N/A',
-            'multiples': {
-                'pe': None,
-                'ps': None,
-                'pb': None,
-                'evEbitda': None
-            },
-            'chartData': [],
-            'success': False,
-            'error': str(e)
-        }
+# Add Manus API client path
+sys.path.append('/opt/.manus/.sandbox-runtime')
+
+try:
+    from data_api import ApiClient
+    MANUS_API_AVAILABLE = True
+except ImportError:
+    MANUS_API_AVAILABLE = False
+    print("Warning: Manus API not available, using fallback mode")
 
 
-def get_multiple_stocks_data(symbols):
+def get_stock_data(ticker):
     """
-    Fetch data for multiple stock symbols
+    Get comprehensive stock data for a single ticker
     
     Args:
-        symbols: List of stock ticker symbols
-    
+        ticker (str): Stock ticker symbol
+        
     Returns:
-        dict: Dictionary mapping symbols to their data
+        dict: Stock data including price, financials, and chart data
+    """
+    if not MANUS_API_AVAILABLE:
+        return get_fallback_data(ticker)
+    
+    try:
+        client = ApiClient()
+        
+        # Get stock chart data (includes price and historical data)
+        response = client.call_api('YahooFinance/get_stock_chart', query={
+            'symbol': ticker,
+            'region': 'US',
+            'interval': '1d',
+            'range': '6mo',  # 6 months of data for charts
+            'includeAdjustedClose': True
+        })
+        
+        if not response or 'chart' not in response or 'result' not in response['chart']:
+            return get_fallback_data(ticker)
+        
+        result = response['chart']['result'][0]
+        meta = result['meta']
+        
+        # Extract price data
+        timestamps = result.get('timestamp', [])
+        quotes = result.get('indicators', {}).get('quote', [{}])[0]
+        
+        # Calculate 6-month return
+        close_prices = [p for p in quotes.get('close', []) if p is not None]
+        six_month_return = 0.0
+        if len(close_prices) >= 2:
+            six_month_return = ((close_prices[-1] - close_prices[0]) / close_prices[0]) * 100
+        
+        # Format chart data
+        chart_data = []
+        for i, timestamp in enumerate(timestamps):
+            if i < len(quotes.get('close', [])) and quotes['close'][i] is not None:
+                chart_data.append({
+                    'date': datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d'),
+                    'price': round(quotes['close'][i], 2)
+                })
+        
+        # Build response
+        stock_data = {
+            'ticker': ticker,
+            'name': meta.get('longName', meta.get('shortName', ticker)),
+            'currentPrice': meta.get('regularMarketPrice', 0),
+            'marketCap': meta.get('marketCap', 0),
+            'sixMonthReturn': round(six_month_return, 2),
+            'chartData': chart_data,
+            'financialData': {
+                'currentPrice': meta.get('regularMarketPrice', 0),
+                'marketCap': format_market_cap(meta.get('marketCap', meta.get('regularMarketCap', 0))),
+                'pe': meta.get('trailingPE', None),
+                'ps': meta.get('priceToSalesTrailing12Months', None),
+                'pb': meta.get('priceToBook', None),
+                'evEbitda': meta.get('enterpriseToEbitda', None),
+                'fiftyTwoWeekHigh': meta.get('fiftyTwoWeekHigh', None),
+                'fiftyTwoWeekLow': meta.get('fiftyTwoWeekLow', None),
+                'volume': meta.get('regularMarketVolume', 0)
+            }
+        }
+        
+        return stock_data
+        
+    except Exception as e:
+        print(f"Error fetching data for {ticker}: {str(e)}")
+        return get_fallback_data(ticker)
+
+
+def get_multiple_stocks_data(tickers):
+    """
+    Get stock data for multiple tickers
+    
+    Args:
+        tickers (list): List of stock ticker symbols
+        
+    Returns:
+        dict: Dictionary mapping tickers to their stock data
     """
     results = {}
-    for symbol in symbols:
-        results[symbol.upper()] = get_stock_data(symbol)
-        # Add small delay between requests to avoid rate limiting
-        time.sleep(0.3)
+    for ticker in tickers:
+        results[ticker] = get_stock_data(ticker)
     return results
 
 
-if __name__ == '__main__':
-    # Test with some symbols
-    test_symbols = ['NVDA', 'TSLA', 'INTC', 'CSCO']
-    
-    print("Testing Financial Data API...")
-    print("=" * 80)
-    
-    for symbol in test_symbols:
-        print(f"\n{symbol}:")
-        data = get_stock_data(symbol)
-        
-        if data['success']:
-            print(f"  Current Price: ${data['currentPrice']}")
-            print(f"  Price Change (6M): {data['priceChange']:+.2f}%")
-            print(f"  Market Cap: {data['marketCap']}")
-            print(f"  P/E: {data['multiples']['pe']}")
-            print(f"  P/S: {data['multiples']['ps']}")
-            print(f"  P/B: {data['multiples']['pb']}")
-            print(f"  EV/EBITDA: {data['multiples']['evEbitda']}")
-            print(f"  Chart Data Points: {len(data['chartData'])}")
-        else:
-            print(f"  Error: {data.get('error', 'Unknown error')}")
+def format_market_cap(market_cap):
+    """Format market cap in billions or trillions"""
+    if market_cap == 0:
+        return "N/A"
+    elif market_cap >= 1_000_000_000_000:
+        return f"${market_cap / 1_000_000_000_000:.2f}T"
+    elif market_cap >= 1_000_000_000:
+        return f"${market_cap / 1_000_000_000:.2f}B"
+    elif market_cap >= 1_000_000:
+        return f"${market_cap / 1_000_000:.2f}M"
+    else:
+        return f"${market_cap:,.0f}"
 
+
+def get_fallback_data(ticker):
+    """
+    Provide fallback data structure when API is unavailable
+    
+    Args:
+        ticker (str): Stock ticker symbol
+        
+    Returns:
+        dict: Minimal stock data structure
+    """
+    return {
+        'ticker': ticker,
+        'name': ticker,
+        'currentPrice': 0,
+        'marketCap': 0,
+        'sixMonthReturn': 0.0,
+        'chartData': [],
+        'financialData': {
+            'currentPrice': 0,
+            'marketCap': 'N/A',
+            'pe': None,
+            'ps': None,
+            'pb': None,
+            'evEbitda': None,
+            'fiftyTwoWeekHigh': None,
+            'fiftyTwoWeekLow': None,
+            'volume': 0
+        },
+        'error': 'Data temporarily unavailable'
+    }
+
+
+# Test function
+if __name__ == "__main__":
+    print("Testing financial data module...")
+    
+    # Test single stock
+    print("\nTesting single stock (AAPL):")
+    aapl_data = get_stock_data("AAPL")
+    print(f"Ticker: {aapl_data['ticker']}")
+    print(f"Name: {aapl_data['name']}")
+    print(f"Current Price: ${aapl_data['currentPrice']}")
+    print(f"Market Cap: {aapl_data['financialData']['marketCap']}")
+    print(f"6M Return: {aapl_data['sixMonthReturn']}%")
+    print(f"Chart data points: {len(aapl_data['chartData'])}")
+    
+    # Test multiple stocks
+    print("\nTesting multiple stocks:")
+    tickers = ["MSFT", "GOOGL", "NVDA"]
+    multi_data = get_multiple_stocks_data(tickers)
+    for ticker, data in multi_data.items():
+        print(f"{ticker}: ${data['currentPrice']} ({data['sixMonthReturn']}% 6M return)")

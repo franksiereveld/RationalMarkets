@@ -526,6 +526,14 @@
             const chartData = financialData.chartData;
             if (chartData.length === 0) return;
             
+            // Chart margins for axes
+            const marginLeft = 60;
+            const marginRight = 20;
+            const marginTop = 20;
+            const marginBottom = 40;
+            const chartWidth = width - marginLeft - marginRight;
+            const chartHeight = height - marginTop - marginBottom;
+            
             // Extract prices
             const prices = chartData.map(d => d.price);
             const minPrice = Math.min(...prices);
@@ -533,17 +541,63 @@
             const priceRange = maxPrice - minPrice;
             
             // Draw chart background
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.clearRect(0, 0, width, height);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
             ctx.fillRect(0, 0, width, height);
+            
+            // Draw grid lines
+            ctx.strokeStyle = '#e9ecef';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= 5; i++) {
+                const y = marginTop + (chartHeight / 5) * i;
+                ctx.beginPath();
+                ctx.moveTo(marginLeft, y);
+                ctx.lineTo(marginLeft + chartWidth, y);
+                ctx.stroke();
+            }
+            
+            // Draw Y-axis
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(marginLeft, marginTop);
+            ctx.lineTo(marginLeft, marginTop + chartHeight);
+            ctx.stroke();
+            
+            // Draw X-axis
+            ctx.beginPath();
+            ctx.moveTo(marginLeft, marginTop + chartHeight);
+            ctx.lineTo(marginLeft + chartWidth, marginTop + chartHeight);
+            ctx.stroke();
+            
+            // Draw Y-axis labels (prices)
+            ctx.fillStyle = '#666';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'right';
+            for (let i = 0; i <= 5; i++) {
+                const price = maxPrice - (priceRange / 5) * i;
+                const y = marginTop + (chartHeight / 5) * i;
+                ctx.fillText('$' + price.toFixed(2), marginLeft - 5, y + 4);
+            }
+            
+            // Draw X-axis labels (dates from chart data)
+            ctx.textAlign = 'center';
+            const firstDate = new Date(chartData[0].date);
+            const midDate = new Date(chartData[Math.floor(chartData.length / 2)].date);
+            const lastDate = new Date(chartData[chartData.length - 1].date);
+            
+            ctx.fillText(firstDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), marginLeft, marginTop + chartHeight + 25);
+            ctx.fillText(midDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), marginLeft + chartWidth / 2, marginTop + chartHeight + 25);
+            ctx.fillText(lastDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), marginLeft + chartWidth, marginTop + chartHeight + 25);
             
             // Draw price line
             ctx.beginPath();
-            ctx.strokeStyle = financialData.priceChange >= 0 ? '#28a745' : '#dc3545';
-            ctx.lineWidth = 2;
+            ctx.strokeStyle = financialData.sixMonthReturn >= 0 ? '#28a745' : '#dc3545';
+            ctx.lineWidth = 3;
             
             chartData.forEach((point, index) => {
-                const x = (index / (chartData.length - 1)) * width;
-                const y = height - ((point.price - minPrice) / priceRange) * (height - 40) - 20;
+                const x = marginLeft + (index / (chartData.length - 1)) * chartWidth;
+                const y = marginTop + chartHeight - ((point.price - minPrice) / priceRange) * chartHeight;
                 
                 if (index === 0) {
                     ctx.moveTo(x, y);
@@ -555,10 +609,10 @@
             ctx.stroke();
             
             // Fill area under curve
-            ctx.lineTo(width, height - 20);
-            ctx.lineTo(0, height - 20);
+            ctx.lineTo(marginLeft + chartWidth, marginTop + chartHeight);
+            ctx.lineTo(marginLeft, marginTop + chartHeight);
             ctx.closePath();
-            ctx.fillStyle = financialData.priceChange >= 0 ? 'rgba(40, 167, 69, 0.1)' : 'rgba(220, 53, 69, 0.1)';
+            ctx.fillStyle = financialData.sixMonthReturn >= 0 ? 'rgba(40, 167, 69, 0.15)' : 'rgba(220, 53, 69, 0.15)';
             ctx.fill();
         }
 
