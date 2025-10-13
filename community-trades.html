@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Community Strategies - RationalMarkets</title>
+    <title>Community Trades - RationalMarkets</title>
     <meta name="description" content="Browse and follow community investment strategies">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -171,7 +171,7 @@
     <div class="main-container">
         <!-- Header -->
         <div class="header">
-            <h1><i class="fas fa-users me-3"></i>Community Strategies</h1>
+            <h1><i class="fas fa-users me-3"></i>Community Trades</h1>
             <p class="lead">Discover and follow investment strategies from the community</p>
             <a href="index.html" class="btn btn-outline-light mt-3">
                 <i class="fas fa-home me-2"></i>Back to Home
@@ -408,7 +408,7 @@
                                 <i class="fas ${isFollowing ? 'fa-check' : 'fa-plus'}"></i>
                                 ${isFollowing ? 'Following' : 'Follow'}
                             </button>
-                            <button class="btn btn-outline-primary ms-2">
+                            <button class="btn btn-outline-primary ms-2" onclick="viewTradeDetails(${strategy.id})">
                                 <i class="fas fa-eye"></i> View Details
                             </button>
                         </div>
@@ -478,6 +478,186 @@
         renderStrategies();
         updateStats();
     </script>
-</body>
-</html>
 
+    <!-- Trade Details Modal -->
+    <div class="modal fade" id="tradeDetailsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle"></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="modalBody">
+                    <!-- Trade details will be inserted here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="modalFollowBtn">Follow Trade</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Investment Amount Modal -->
+    <div class="modal fade" id="investmentModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Investment Amount</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>How much would you like to invest in this trade? (Optional)</p>
+                    <div class="input-group mb-3">
+                        <select class="form-select" id="followCurrency" style="max-width: 100px;">
+                            <option value="USD">$</option>
+                            <option value="EUR">€</option>
+                        </select>
+                        <input type="number" class="form-control" id="followInvestmentAmount" 
+                               placeholder="e.g., 10000" min="0" step="100">
+                    </div>
+                    <small class="text-muted">Leave empty to follow without specifying an amount</small>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="confirmFollow()">Confirm Follow</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js">
+        let currentFollowStrategyId = null;
+
+        function viewTradeDetails(strategyId) {
+            const strategy = strategies.find(s => s.id === strategyId);
+            if (!strategy) return;
+
+            document.getElementById('modalTitle').textContent = strategy.name;
+            
+            const modalBody = document.getElementById('modalBody');
+            modalBody.innerHTML = `
+                <div class="mb-3">
+                    <h6>Strategy Type</h6>
+                    <span class="badge bg-${strategy.type === 'Bullish' ? 'success' : strategy.type === 'Bearish' ? 'danger' : 'secondary'}">
+                        ${strategy.type}
+                    </span>
+                    <span class="badge bg-${strategy.risk === 'Low' ? 'success' : strategy.risk === 'Moderate' ? 'warning' : 'danger'} ms-2">
+                        ${strategy.risk} Risk
+                    </span>
+                </div>
+                
+                <div class="mb-3">
+                    <h6>Performance</h6>
+                    <div class="row">
+                        <div class="col-3"><strong>1M:</strong> ${strategy.returns['1m']}%</div>
+                        <div class="col-3"><strong>3M:</strong> ${strategy.returns['3m']}%</div>
+                        <div class="col-3"><strong>6M:</strong> ${strategy.returns['6m']}%</div>
+                        <div class="col-3"><strong>1Y:</strong> ${strategy.returns['1y']}%</div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <h6>Long Positions</h6>
+                    ${strategy.longPositions.map(pos => `
+                        <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
+                            <span><strong>${pos}</strong></span>
+                            <span class="text-success"><i class="fas fa-arrow-up"></i></span>
+                        </div>
+                    `).join('')}
+                </div>
+
+                ${strategy.shortPositions && strategy.shortPositions.length > 0 ? `
+                <div class="mb-3">
+                    <h6>Short Positions</h6>
+                    ${strategy.shortPositions.map(pos => `
+                        <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
+                            <span><strong>${pos}</strong></span>
+                            <span class="text-danger"><i class="fas fa-arrow-down"></i></span>
+                        </div>
+                    `).join('')}
+                </div>
+                ` : ''}
+
+                <div class="mb-3">
+                    <h6>Author</h6>
+                    <div class="d-flex align-items-center">
+                        <img src="${strategy.author.avatar}" alt="${strategy.author.name}" 
+                             style="width: 40px; height: 40px; border-radius: 50%; margin-right: 10px;">
+                        <span>${strategy.author.name}</span>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <h6>Followers</h6>
+                    <p>${strategy.followers} traders following this strategy</p>
+                </div>
+            `;
+
+            // Update follow button
+            const isFollowing = followedStrategies.includes(strategyId);
+            const followBtn = document.getElementById('modalFollowBtn');
+            followBtn.textContent = isFollowing ? 'Unfollow' : 'Follow Trade';
+            followBtn.className = isFollowing ? 'btn btn-secondary' : 'btn btn-primary';
+            followBtn.onclick = () => {
+                if (isFollowing) {
+                    toggleFollow(strategyId);
+                    bootstrap.Modal.getInstance(document.getElementById('tradeDetailsModal')).hide();
+                } else {
+                    showInvestmentModal(strategyId);
+                }
+            };
+
+            // Show modal
+            new bootstrap.Modal(document.getElementById('tradeDetailsModal')).show();
+        }
+
+        function showInvestmentModal(strategyId) {
+            currentFollowStrategyId = strategyId;
+            document.getElementById('followInvestmentAmount').value = '';
+            new bootstrap.Modal(document.getElementById('investmentModal')).show();
+        }
+
+        function confirmFollow() {
+            if (currentFollowStrategyId === null) return;
+
+            const amount = document.getElementById('followInvestmentAmount').value;
+            const currency = document.getElementById('followCurrency').value;
+
+            // Save follow with investment amount
+            const followData = {
+                strategyId: currentFollowStrategyId,
+                amount: amount ? parseFloat(amount) : null,
+                currency: currency,
+                followedAt: new Date().toISOString()
+            };
+
+            // Get existing follows
+            const follows = JSON.parse(localStorage.getItem('followedTrades') || '[]');
+            follows.push(followData);
+            localStorage.setItem('followedTrades', JSON.stringify(follows));
+
+            // Toggle follow
+            toggleFollow(currentFollowStrategyId);
+
+            // Close modals
+            bootstrap.Modal.getInstance(document.getElementById('investmentModal')).hide();
+            const detailsModal = bootstrap.Modal.getInstance(document.getElementById('tradeDetailsModal'));
+            if (detailsModal) detailsModal.hide();
+
+            currentFollowStrategyId = null;
+        }
+
+        // Update the original toggleFollow to show investment modal
+        const originalToggleFollow = toggleFollow;
+        toggleFollow = function(strategyId) {
+            const isFollowing = followedStrategies.includes(strategyId);
+            if (!isFollowing) {
+                showInvestmentModal(strategyId);
+            } else {
+                originalToggleFollow(strategyId);
+            }
+        };
+
+    </script>
+    

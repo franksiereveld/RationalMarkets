@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-RationalMarkets AI Analysis API Server v2
-Includes OpenAI trade analysis + Real financial data
+RationalMarkets AI Analysis API Server
+Simple Flask server for OpenAI-powered trade analysis
 """
 
 import json
@@ -10,7 +10,6 @@ from datetime import datetime
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from openai import OpenAI
-from financial_data import get_stock_data, get_multiple_stocks_data
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
@@ -20,7 +19,7 @@ client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
 
 @app.route('/api/analyze-trade', methods=['POST', 'OPTIONS'])
 def analyze_trade():
-    """Analyze a trade idea using OpenAI and enrich with real financial data"""
+    """Analyze a trade idea using OpenAI"""
     
     # Handle preflight request
     if request.method == 'OPTIONS':
@@ -77,17 +76,10 @@ Return your analysis in the following JSON format:
         "1Y": "X.X%",
         "3Y": "X.X%"
     },
-    "returnRationale": {
-        "1M": "Explanation for 1-month return estimate",
-        "3M": "Explanation for 3-month return estimate",
-        "6M": "Explanation for 6-month return estimate",
-        "1Y": "Explanation for 1-year return estimate",
-        "3Y": "Explanation for 3-year return estimate"
-    },
     "aiRationale": "Comprehensive analysis of the strategy, including thesis, risks, and potential outcomes."
 }
 
-Be specific with ticker symbols. Ensure allocations add up to 100%. Be realistic with return estimates. Provide detailed rationale for each return period explaining the key drivers and assumptions.
+Be specific with ticker symbols. Ensure allocations add up to 100%. Be realistic with return estimates.
 Consider both the upside potential and downside risks. For short strategies, return estimates can be negative."""
 
         user_prompt = f"""Trade Idea: {trade_name}
@@ -97,7 +89,6 @@ Description: {trade_description}
 Please analyze this investment idea and provide specific stock recommendations with a complete long/short strategy."""
 
         # Call OpenAI API
-        print(f"Calling OpenAI for trade: {trade_name}")
         response = client.chat.completions.create(
             model="gpt-4.1-mini",
             messages=[
@@ -112,28 +103,6 @@ Please analyze this investment idea and provide specific stock recommendations w
         # Parse AI response
         ai_analysis = json.loads(response.choices[0].message.content)
         
-        # Extract all stock symbols
-        all_symbols = []
-        for pos in ai_analysis.get('longPositions', []):
-            all_symbols.append(pos['symbol'])
-        for pos in ai_analysis.get('shortPositions', []):
-            all_symbols.append(pos['symbol'])
-        
-        # Fetch real financial data for all symbols
-        print(f"Fetching financial data for: {all_symbols}")
-        financial_data = get_multiple_stocks_data(all_symbols)
-        
-        # Enrich positions with real financial data
-        for pos in ai_analysis.get('longPositions', []):
-            symbol = pos['symbol'].upper()
-            if symbol in financial_data:
-                pos['financialData'] = financial_data[symbol]
-        
-        for pos in ai_analysis.get('shortPositions', []):
-            symbol = pos['symbol'].upper()
-            if symbol in financial_data:
-                pos['financialData'] = financial_data[symbol]
-        
         # Add metadata
         result = {
             "tradeName": trade_name,
@@ -142,36 +111,22 @@ Please analyze this investment idea and provide specific stock recommendations w
             **ai_analysis
         }
         
-        print(f"Analysis complete for: {trade_name}")
         return jsonify(result), 200
     
     except Exception as e:
         print(f"Error: {str(e)}")
-        import traceback
-        traceback.print_exc()
         return jsonify({
             'error': f'Analysis failed: {str(e)}'
-        }), 500
-
-@app.route('/api/stock-data/<symbol>', methods=['GET'])
-def get_stock_info(symbol):
-    """Get financial data for a single stock"""
-    try:
-        data = get_stock_data(symbol)
-        return jsonify(data), 200
-    except Exception as e:
-        return jsonify({
-            'error': f'Failed to fetch stock data: {str(e)}'
         }), 500
 
 @app.route('/health', methods=['GET'])
 def health():
     """Health check endpoint"""
-    return jsonify({'status': 'healthy', 'version': 'v2'}), 200
+    return jsonify({'status': 'healthy'}), 200
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5002))
-    print(f"Starting RationalMarkets AI Analysis API v2 on http://localhost:{port}")
-    print("Features: OpenAI Analysis + Real Financial Data")
+    port = int(os.environ.get('PORT', 5001))
+    print(f"Starting RationalMarkets AI Analysis API on http://localhost:{port}")
     print("Press Ctrl+C to stop")
     app.run(host='0.0.0.0', port=port, debug=False)
+

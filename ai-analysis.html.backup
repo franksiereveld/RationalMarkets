@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Trade Analysis - RationalMarkets</title>
+    <meta name="description" content="AI-powered trade analysis and strategy implementation">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            color: white;
+        }
+        .header h1 {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            padding: 1.5rem;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 1rem 2rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .form-control, .form-select {
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            padding: 1rem;
+            transition: all 0.3s ease;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        .position-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+        .position-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .long-position {
+            border-left: 4px solid #28a745;
+        }
+        .short-position {
+            border-left: 4px solid #dc3545;
+        }
+        .return-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .return-card {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .return-card h3 {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        .badge {
+            font-size: 0.9rem;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+        }
+        .loading {
+            text-align: center;
+            padding: 3rem;
+        }
+        .spinner {
+            width: 3rem;
+            height: 3rem;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(255,255,255,0.9);
+            color: #667eea;
+            border: none;
+            border-radius: 50px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        .back-btn:hover {
+            background: white;
+            color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-btn">
+        <i class="fas fa-arrow-left me-2"></i>Back to Home
+    </a>
+
+    <div class="main-container">
+        <div class="header">
+            <h1><i class="fas fa-brain me-3"></i>AI Trade Analysis</h1>
+            <p>Describe your investment idea and let our AI analyze and implement it with specific stock recommendations</p>
+        </div>
+
+        <!-- Trade Input Form -->
+        <div id="inputForm" class="card">
+            <div class="card-header">
+                <h3 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Suggest a Trade Idea</h3>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <label for="tradeName" class="form-label fw-bold">Trade Name</label>
+                    <input type="text" class="form-control" id="tradeName" placeholder="e.g., AI Bubble Short Strategy">
+                </div>
+                <div class="mb-4">
+                    <label for="tradeDescription" class="form-label fw-bold">Trade Idea Description</label>
+                    <textarea class="form-control" id="tradeDescription" rows="4" placeholder="Describe your investment thesis... e.g., 'I believe AI stocks are in a bubble and want to short the most overvalued ones like NVIDIA and Tesla.'"></textarea>
+                </div>
+                <button class="btn btn-primary btn-lg w-100" onclick="analyzeTradeWithAI()">
+                    <i class="fas fa-brain me-2"></i>Analyze with AI
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="card" style="display: none;">
+            <div class="card-body loading">
+                <div class="spinner"></div>
+                <h4>AI is analyzing your trade idea...</h4>
+                <p class="text-muted">This may take a few seconds</p>
+            </div>
+        </div>
+
+        <!-- Analysis Results -->
+        <div id="analysisResults" style="display: none;">
+            <!-- Trade Header -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 id="resultTradeName" class="mb-2"></h2>
+                            <p class="text-muted mb-0">Created by <span id="resultOwner"></span> • <span id="resultDate"></span></p>
+                        </div>
+                        <div>
+                            <span id="resultRecommendation" class="badge bg-success me-2"></span>
+                            <span id="resultRisk" class="badge bg-warning"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Return Estimates -->
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="fas fa-chart-line me-2"></i>AI Return Estimates</h4>
+                </div>
+                <div class="card-body">
+                    <div id="returnGrid" class="return-grid"></div>
+                </div>
+            </div>
+
+            <!-- Long Positions -->
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="fas fa-arrow-up me-2 text-success"></i>Long Positions</h4>
+                </div>
+                <div class="card-body">
+                    <div id="longPositions"></div>
+                </div>
+            </div>
+
+            <!-- Short Positions -->
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="fas fa-arrow-down me-2 text-danger"></i>Short Positions</h4>
+                </div>
+                <div class="card-body">
+                    <div id="shortPositions"></div>
+                </div>
+            </div>
+
+            <!-- AI Rationale -->
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="fas fa-brain me-2"></i>AI Analysis & Rationale</h4>
+                </div>
+                <div class="card-body">
+                    <p id="aiRationale" class="mb-0"></p>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="text-center mt-4">
+                <button class="btn btn-outline-primary btn-lg me-3" onclick="resetForm()">
+                    <i class="fas fa-plus me-2"></i>Suggest Another Trade
+                </button>
+                <button class="btn btn-success btn-lg" onclick="trackTrade()">
+                    <i class="fas fa-chart-line me-2"></i>Track This Trade
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration: Set to true to use real AI API, false for mock analysis
+        const USE_REAL_AI = true;  // Real AI enabled - connected to Railway backend
+        const API_ENDPOINT = 'https://web-production-3b184.up.railway.app/api/analyze-trade';  // Production Railway API
+
+        async function analyzeTradeWithAI() {
+            const tradeName = document.getElementById('tradeName').value.trim();
+            const tradeDescription = document.getElementById('tradeDescription').value.trim();
+            
+            if (!tradeName || !tradeDescription) {
+                alert('Please fill in both trade name and description');
+                return;
+            }
+
+            // Show loading state
+            document.getElementById('inputForm').style.display = 'none';
+            document.getElementById('loadingState').style.display = 'block';
+
+            if (USE_REAL_AI) {
+                // Call real AI API
+                try {
+                    const response = await fetch(API_ENDPOINT, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            tradeName: tradeName,
+                            tradeDescription: tradeDescription
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`API error: ${response.status}`);
+                    }
+
+                    const analysis = await response.json();
+                    displayAnalysis(analysis);
+                    
+                    document.getElementById('loadingState').style.display = 'none';
+                    document.getElementById('analysisResults').style.display = 'block';
+                } catch (error) {
+                    console.error('AI Analysis Error:', error);
+                    alert('Failed to analyze trade. Please try again. Error: ' + error.message);
+                    document.getElementById('loadingState').style.display = 'none';
+                    document.getElementById('inputForm').style.display = 'block';
+                }
+            } else {
+                // Use mock analysis
+                setTimeout(() => {
+                    const analysis = generateAIAnalysis(tradeName, tradeDescription);
+                    displayAnalysis(analysis);
+                    
+                    document.getElementById('loadingState').style.display = 'none';
+                    document.getElementById('analysisResults').style.display = 'block';
+                }, 3000);
+            }
+        }
+
+        function generateAIAnalysis(tradeName, tradeDescription) {
+            // Analyze sentiment to determine strategy type
+            const text = (tradeName + ' ' + tradeDescription).toLowerCase();
+            const bearishKeywords = ['short', 'bubble', 'overvalued', 'crash', 'decline', 'puts', 'bear', 'timing', 'sell'];
+            const bullishKeywords = ['long', 'growth', 'buy', 'bull', 'undervalued', 'opportunity'];
+            
+            const bearishScore = bearishKeywords.filter(keyword => text.includes(keyword)).length;
+            const bullishScore = bullishKeywords.filter(keyword => text.includes(keyword)).length;
+            
+            const isBearish = bearishScore > bullishScore || text.includes('short') || text.includes('bubble');
+
+            if (isBearish) {
+                return {
+                    tradeName: tradeName,
+                    date: new Date().toLocaleDateString(),
+                    owner: 'Current User',
+                    recommendation: 'RECOMMENDED',
+                    riskLevel: 'HIGH',
+                    longPositions: [
+                        { symbol: 'VIX', name: 'CBOE Volatility Index', allocation: '20%', rationale: 'Hedge against market volatility during AI bubble correction' },
+                        { symbol: 'SQQQ', name: 'ProShares UltraPro Short QQQ', allocation: '15%', rationale: 'Triple-leveraged short on tech-heavy NASDAQ' }
+                    ],
+                    shortPositions: [
+                        { symbol: 'NVDA', name: 'NVIDIA Corporation', allocation: '25%', rationale: 'Most overvalued AI stock with P/E over 60, vulnerable to correction' },
+                        { symbol: 'TSLA', name: 'Tesla Inc.', allocation: '20%', rationale: 'AI/FSD promises not delivering, high valuation unsustainable' },
+                        { symbol: 'PLTR', name: 'Palantir Technologies', allocation: '15%', rationale: 'AI hype stock with limited revenue growth to justify valuation' },
+                        { symbol: 'C3AI', name: 'C3.ai Inc.', allocation: '10%', rationale: 'Pure AI play with massive losses and uncertain path to profitability' }
+                    ],
+                    returnEstimates: {
+                        '1M': '12.5%',
+                        '3M': '28.7%',
+                        '6M': '45.2%',
+                        '1Y': '65.8%',
+                        '3Y': '85.4%'
+                    },
+                    aiRationale: 'This bearish AI bubble strategy targets the most overvalued AI stocks for short positions while using volatility hedges. The thesis is that AI valuations have reached unsustainable levels, with companies trading at extreme multiples without corresponding revenue growth. Short positions focus on pure-play AI stocks with the highest valuations and most speculative business models. The strategy includes volatility hedges to profit from market turbulence during the correction. High risk due to potential for continued irrational exuberance, but strong potential returns if AI bubble deflates.'
+                };
+            } else {
+                return {
+                    tradeName: tradeName,
+                    date: new Date().toLocaleDateString(),
+                    owner: 'Current User',
+                    recommendation: 'RECOMMENDED',
+                    riskLevel: 'MODERATE',
+                    longPositions: [
+                        { symbol: 'NVDA', name: 'NVIDIA Corporation', allocation: '25%', rationale: 'Leading AI chip manufacturer with strong moat' },
+                        { symbol: 'MSFT', name: 'Microsoft Corporation', allocation: '20%', rationale: 'Azure AI services and OpenAI partnership' },
+                        { symbol: 'GOOGL', name: 'Alphabet Inc.', allocation: '15%', rationale: 'Advanced AI research and cloud infrastructure' }
+                    ],
+                    shortPositions: [
+                        { symbol: 'TLPFY', name: 'Teleperformance SE', allocation: '15%', rationale: 'Call center services vulnerable to AI automation' },
+                        { symbol: 'HRB', name: 'H&R Block Inc.', allocation: '10%', rationale: 'Tax preparation being automated by AI tools' }
+                    ],
+                    returnEstimates: {
+                        '1M': '8.5%',
+                        '3M': '15.2%',
+                        '6M': '28.7%',
+                        '1Y': '45.3%',
+                        '3Y': '125.8%'
+                    },
+                    aiRationale: 'This AI disruption strategy capitalizes on the transformative impact of artificial intelligence across industries. The long positions target companies that are either developing AI technology (NVIDIA\'s chips, Microsoft\'s Azure AI) or successfully integrating AI into their business models. The short positions focus on traditional service industries that face significant disruption from AI automation. The risk is moderate due to diversification across multiple AI beneficiaries, though technology sector volatility should be expected.'
+                };
+            }
+        }
+
+        function displayAnalysis(analysis) {
+            document.getElementById('resultTradeName').textContent = analysis.tradeName;
+            document.getElementById('resultOwner').textContent = analysis.owner;
+            document.getElementById('resultDate').textContent = analysis.date;
+            document.getElementById('resultRecommendation').textContent = analysis.recommendation;
+            document.getElementById('resultRisk').textContent = 'Risk: ' + analysis.riskLevel;
+
+            // Return estimates
+            const returnGrid = document.getElementById('returnGrid');
+            returnGrid.innerHTML = '';
+            Object.entries(analysis.returnEstimates).forEach(([period, estimate]) => {
+                const card = document.createElement('div');
+                card.className = 'return-card';
+                card.innerHTML = `<h3>${estimate}</h3><p>${period}</p>`;
+                returnGrid.appendChild(card);
+            });
+
+            // Long positions
+            displayPositionsWithCharts(analysis.longPositions, 'longPositions', true);
+
+            // Short positions
+            displayPositionsWithCharts(analysis.shortPositions, 'shortPositions', false);
+
+            // AI rationale
+            document.getElementById('aiRationale').textContent = analysis.aiRationale;
+        }
+
+        function displayPositionsWithCharts(positions, containerId, isLong) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            
+            positions.forEach(position => {
+                const card = document.createElement('div');
+                card.className = `position-card ${isLong ? 'long-position' : 'short-position'}`;
+                
+                // Use real financial data if available, otherwise generate mock data
+                const financialData = position.financialData || null;
+                const mockData = financialData ? null : generateMockFinancialData(position.symbol);
+                
+                // Extract data from either real or mock source
+                const priceChange = financialData ? financialData.priceChange : mockData.priceChange;
+                const currentPrice = financialData ? `$${financialData.currentPrice}` : mockData.price;
+                const marketCap = financialData ? financialData.marketCap : mockData.marketCap;
+                const pe = financialData && financialData.multiples.pe ? financialData.multiples.pe : (mockData ? mockData.pe : 'N/A');
+                const ps = financialData && financialData.multiples.ps ? financialData.multiples.ps : (mockData ? mockData.ps : 'N/A');
+                const pb = financialData && financialData.multiples.pb ? financialData.multiples.pb : (mockData ? mockData.pb : 'N/A');
+                const evEbitda = financialData && financialData.multiples.evEbitda ? financialData.multiples.evEbitda : (mockData ? mockData.ev_ebitda : 'N/A');
+                
+                card.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <span class="badge ${isLong ? 'bg-success' : 'bg-danger'}">${position.symbol}</span>
+                            <strong class="ms-2">${position.name}</strong>
+                        </div>
+                        <span class="badge bg-secondary">${position.allocation}</span>
+                    </div>
+                    
+                    <!-- Stock Chart -->
+                    <div class="mb-3">
+                        <div class="chart-container" style="height: 200px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; position: relative; overflow: hidden;">
+                            <canvas id="chart-${position.symbol}" width="100%" height="200"></canvas>
+                            <div style="position: absolute; top: 10px; left: 15px;">
+                                <small class="text-muted">6M Price Chart</small>
+                            </div>
+                            <div style="position: absolute; top: 10px; right: 15px;">
+                                <span class="badge ${priceChange >= 0 ? 'bg-success' : 'bg-danger'}">
+                                    ${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(1)}%
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Financial Multiples -->
+                    <div class="row mb-3">
+                        <div class="col-3">
+                            <div class="text-center p-2" style="background: rgba(0,123,255,0.1); border-radius: 6px;">
+                                <div class="fw-bold text-primary">${pe}</div>
+                                <small class="text-muted">P/E</small>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="text-center p-2" style="background: rgba(40,167,69,0.1); border-radius: 6px;">
+                                <div class="fw-bold text-success">${ps}</div>
+                                <small class="text-muted">P/S</small>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="text-center p-2" style="background: rgba(255,193,7,0.1); border-radius: 6px;">
+                                <div class="fw-bold text-warning">${pb}</div>
+                                <small class="text-muted">P/B</small>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="text-center p-2" style="background: rgba(220,53,69,0.1); border-radius: 6px;">
+                                <div class="fw-bold text-danger">${evEbitda}</div>
+                                <small class="text-muted">EV/EBITDA</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Current Price & Market Cap -->
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <div class="text-center p-2" style="background: rgba(108,117,125,0.1); border-radius: 6px;">
+                                <div class="fw-bold">${currentPrice}</div>
+                                <small class="text-muted">Current Price</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center p-2" style="background: rgba(108,117,125,0.1); border-radius: 6px;">
+                                <div class="fw-bold">${marketCap}</div>
+                                <small class="text-muted">Market Cap</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Rationale -->
+                    <p class="text-muted mb-0">${position.rationale}</p>
+                `;
+                container.appendChild(card);
+                
+                // Draw the chart after the element is added to DOM
+                if (financialData && financialData.chartData && financialData.chartData.length > 0) {
+                    setTimeout(() => drawRealChart(position.symbol, financialData), 100);
+                } else {
+                    setTimeout(() => drawMockChart(position.symbol, mockData || {priceChange: 0, price: '$0.00'}), 100);
+                }
+            });
+        }
+        
+        function drawRealChart(symbol, financialData) {
+            const canvas = document.getElementById(`chart-${symbol}`);
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            const width = canvas.offsetWidth;
+            const height = 200;
+            canvas.width = width;
+            canvas.height = height;
+            
+            const chartData = financialData.chartData;
+            if (chartData.length === 0) return;
+            
+            // Extract prices
+            const prices = chartData.map(d => d.price);
+            const minPrice = Math.min(...prices);
+            const maxPrice = Math.max(...prices);
+            const priceRange = maxPrice - minPrice;
+            
+            // Draw chart background
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.fillRect(0, 0, width, height);
+            
+            // Draw price line
+            ctx.beginPath();
+            ctx.strokeStyle = financialData.priceChange >= 0 ? '#28a745' : '#dc3545';
+            ctx.lineWidth = 2;
+            
+            chartData.forEach((point, index) => {
+                const x = (index / (chartData.length - 1)) * width;
+                const y = height - ((point.price - minPrice) / priceRange) * (height - 40) - 20;
+                
+                if (index === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            });
+            
+            ctx.stroke();
+            
+            // Fill area under curve
+            ctx.lineTo(width, height - 20);
+            ctx.lineTo(0, height - 20);
+            ctx.closePath();
+            ctx.fillStyle = financialData.priceChange >= 0 ? 'rgba(40, 167, 69, 0.1)' : 'rgba(220, 53, 69, 0.1)';
+            ctx.fill();
+        }
+
+        function generateMockFinancialData(symbol) {
+            // Mock financial data based on symbol
+            const dataMap = {
+                'NVDA': { pe: '65.2', ps: '22.1', pb: '13.8', ev_ebitda: '45.3', price: '$875.28', marketCap: '$2.15T', priceChange: 145.7 },
+                'TSLA': { pe: '73.1', ps: '8.9', pb: '9.2', ev_ebitda: '52.7', price: '$248.50', marketCap: '$791B', priceChange: -12.3 },
+                'MSFT': { pe: '28.4', ps: '11.2', pb: '4.1', ev_ebitda: '18.9', price: '$378.85', marketCap: '$2.81T', priceChange: 23.4 },
+                'GOOGL': { pe: '21.8', ps: '4.8', pb: '3.2', ev_ebitda: '12.1', price: '$138.21', marketCap: '$1.75T', priceChange: 18.9 },
+                'PLTR': { pe: '195.4', ps: '18.7', pb: '7.3', ev_ebitda: 'N/A', price: '$23.45', marketCap: '$51.2B', priceChange: -8.7 },
+                'C3AI': { pe: 'N/A', ps: '21.3', pb: '4.8', ev_ebitda: 'N/A', price: '$28.91', marketCap: '$3.2B', priceChange: -15.2 },
+                'VIX': { pe: 'N/A', ps: 'N/A', pb: 'N/A', ev_ebitda: 'N/A', price: '$14.23', marketCap: 'N/A', priceChange: 8.4 },
+                'SQQQ': { pe: 'N/A', ps: 'N/A', pb: 'N/A', ev_ebitda: 'N/A', price: '$8.45', marketCap: '$1.8B', priceChange: -45.2 },
+                'TLPFY': { pe: '12.8', ps: '1.4', pb: '2.1', ev_ebitda: '8.9', price: '$18.67', marketCap: '$12.4B', priceChange: -5.3 },
+                'HRB': { pe: '11.2', ps: '2.1', pb: '1.8', ev_ebitda: '7.4', price: '$58.23', marketCap: '$9.8B', priceChange: 2.1 }
+            };
+            
+            return dataMap[symbol] || { pe: 'N/A', ps: 'N/A', pb: 'N/A', ev_ebitda: 'N/A', price: '$0.00', marketCap: 'N/A', priceChange: 0 };
+        }
+
+        function drawMockChart(symbol, data) {
+            const canvas = document.getElementById(`chart-${symbol}`);
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            const width = canvas.offsetWidth;
+            const height = 200;
+            canvas.width = width;
+            canvas.height = height;
+            
+            // Generate mock price data (6 months)
+            const points = 180; // 6 months of daily data
+            const priceData = [];
+            let basePrice = parseFloat(data.price.replace('$', '').replace(',', '')) || 100;
+            let currentPrice = basePrice / (1 + data.priceChange / 100); // Starting price
+            
+            for (let i = 0; i < points; i++) {
+                // Add some volatility
+                const volatility = (Math.random() - 0.5) * 0.04; // ±2% daily volatility
+                const trend = (data.priceChange / 100) / points; // Distribute total change over period
+                currentPrice *= (1 + trend + volatility);
+                priceData.push(currentPrice);
+            }
+            
+            // Draw chart
+            ctx.clearRect(0, 0, width, height);
+            
+            // Chart background
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.fillRect(0, 0, width, height);
+            
+            // Price line
+            const minPrice = Math.min(...priceData);
+            const maxPrice = Math.max(...priceData);
+            const priceRange = maxPrice - minPrice;
+            
+            ctx.beginPath();
+            ctx.strokeStyle = data.priceChange >= 0 ? '#28a745' : '#dc3545';
+            ctx.lineWidth = 2;
+            
+            priceData.forEach((price, index) => {
+                const x = (index / (points - 1)) * width;
+                const y = height - ((price - minPrice) / priceRange) * (height - 40) - 20;
+                
+                if (index === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            });
+            
+            ctx.stroke();
+            
+            // Fill area under curve
+            ctx.lineTo(width, height - 20);
+            ctx.lineTo(0, height - 20);
+            ctx.closePath();
+            ctx.fillStyle = data.priceChange >= 0 ? 'rgba(40, 167, 69, 0.1)' : 'rgba(220, 53, 69, 0.1)';
+            ctx.fill();
+        }
+
+        function resetForm() {
+            document.getElementById('tradeName').value = '';
+            document.getElementById('tradeDescription').value = '';
+            document.getElementById('inputForm').style.display = 'block';
+            document.getElementById('analysisResults').style.display = 'none';
+        }
+
+        function trackTrade() {
+            alert('Trade tracking functionality will be implemented in the next phase!');
+        }
+    </script>
+</body>
+</html>
