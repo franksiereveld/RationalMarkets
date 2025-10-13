@@ -203,17 +203,7 @@
                 </div>
             </div>
 
-            <!-- Return Estimates -->
-            <div class="card">
-                <div class="card-header">
-                    <h4 class="mb-0"><i class="fas fa-chart-line me-2"></i>AI Return Estimates</h4>
-                </div>
-                <div class="card-body">
-                    <div id="returnGrid" class="return-grid"></div>
-                </div>
-            </div>
-
-            <!-- Long Positions -->
+<!-- Long Positions -->
             <div class="card">
                 <div class="card-header">
                     <h4 class="mb-0"><i class="fas fa-arrow-up me-2 text-success"></i>Long Positions</h4>
@@ -243,7 +233,21 @@
                 </div>
             </div>
 
-            <!-- Action Buttons -->
+            <!-- Return Estimates -->
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="fas fa-chart-line me-2"></i>AI Return Estimates</h4>
+                </div>
+                <div class="card-body">
+                    <div id="returnGrid" class="return-grid"></div>
+                    <div id="returnRationale" class="mt-4" style="padding: 1.5rem; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 10px;">
+                        <h6 class="mb-3"><i class="fas fa-info-circle me-2"></i>Return Estimate Rationale</h6>
+                        <p id="returnRationaleText" class="mb-0 text-muted"></p>
+                    </div>
+                </div>
+            </div>
+
+                        <!-- Action Buttons -->
             <div class="text-center mt-4">
                 <button class="btn btn-outline-primary btn-lg me-3" onclick="resetForm()">
                     <i class="fas fa-plus me-2"></i>Suggest Another Trade
@@ -438,7 +442,7 @@
                     
                     <!-- Stock Chart -->
                     <div class="mb-3">
-                        <div class="chart-container" style="height: 200px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; position: relative; overflow: hidden;">
+                        <div class="chart-container" style="height: 350px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; position: relative; overflow: hidden;">
                             <canvas id="chart-${position.symbol}" width="100%" height="200"></canvas>
                             <div style="position: absolute; top: 10px; left: 15px;">
                                 <small class="text-muted">6M Price Chart</small>
@@ -515,7 +519,7 @@
             
             const ctx = canvas.getContext('2d');
             const width = canvas.offsetWidth;
-            const height = 200;
+            const height = 350;
             canvas.width = width;
             canvas.height = height;
             
@@ -582,7 +586,7 @@
             
             const ctx = canvas.getContext('2d');
             const width = canvas.offsetWidth;
-            const height = 200;
+            const height = 350;
             canvas.width = width;
             canvas.height = height;
             
@@ -600,11 +604,19 @@
                 priceData.push(currentPrice);
             }
             
+            // Chart margins for axes
+            const marginLeft = 60;
+            const marginRight = 20;
+            const marginTop = 20;
+            const marginBottom = 40;
+            const chartWidth = width - marginLeft - marginRight;
+            const chartHeight = height - marginTop - marginBottom;
+            
             // Draw chart
             ctx.clearRect(0, 0, width, height);
             
             // Chart background
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
             ctx.fillRect(0, 0, width, height);
             
             // Price line
@@ -612,13 +624,61 @@
             const maxPrice = Math.max(...priceData);
             const priceRange = maxPrice - minPrice;
             
+            // Draw grid lines
+            ctx.strokeStyle = '#e9ecef';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= 5; i++) {
+                const y = marginTop + (chartHeight / 5) * i;
+                ctx.beginPath();
+                ctx.moveTo(marginLeft, y);
+                ctx.lineTo(marginLeft + chartWidth, y);
+                ctx.stroke();
+            }
+            
+            // Draw Y-axis
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(marginLeft, marginTop);
+            ctx.lineTo(marginLeft, marginTop + chartHeight);
+            ctx.stroke();
+            
+            // Draw X-axis
+            ctx.beginPath();
+            ctx.moveTo(marginLeft, marginTop + chartHeight);
+            ctx.lineTo(marginLeft + chartWidth, marginTop + chartHeight);
+            ctx.stroke();
+            
+            // Draw Y-axis labels (prices)
+            ctx.fillStyle = '#666';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'right';
+            for (let i = 0; i <= 5; i++) {
+                const price = maxPrice - (priceRange / 5) * i;
+                const y = marginTop + (chartHeight / 5) * i;
+                ctx.fillText('$' + price.toFixed(2), marginLeft - 5, y + 4);
+            }
+            
+            // Draw X-axis labels (mock dates)
+            ctx.textAlign = 'center';
+            const today = new Date();
+            const sixMonthsAgo = new Date(today);
+            sixMonthsAgo.setMonth(today.getMonth() - 6);
+            const threeMonthsAgo = new Date(today);
+            threeMonthsAgo.setMonth(today.getMonth() - 3);
+            
+            ctx.fillText(sixMonthsAgo.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), marginLeft, marginTop + chartHeight + 25);
+            ctx.fillText(threeMonthsAgo.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), marginLeft + chartWidth / 2, marginTop + chartHeight + 25);
+            ctx.fillText(today.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), marginLeft + chartWidth, marginTop + chartHeight + 25);
+            
+            // Draw price line
             ctx.beginPath();
             ctx.strokeStyle = data.priceChange >= 0 ? '#28a745' : '#dc3545';
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 3;
             
             priceData.forEach((price, index) => {
-                const x = (index / (points - 1)) * width;
-                const y = height - ((price - minPrice) / priceRange) * (height - 40) - 20;
+                const x = marginLeft + (index / (points - 1)) * chartWidth;
+                const y = marginTop + chartHeight - ((price - minPrice) / priceRange) * chartHeight;
                 
                 if (index === 0) {
                     ctx.moveTo(x, y);
@@ -630,10 +690,10 @@
             ctx.stroke();
             
             // Fill area under curve
-            ctx.lineTo(width, height - 20);
-            ctx.lineTo(0, height - 20);
+            ctx.lineTo(marginLeft + chartWidth, marginTop + chartHeight);
+            ctx.lineTo(marginLeft, marginTop + chartHeight);
             ctx.closePath();
-            ctx.fillStyle = data.priceChange >= 0 ? 'rgba(40, 167, 69, 0.1)' : 'rgba(220, 53, 69, 0.1)';
+            ctx.fillStyle = data.priceChange >= 0 ? 'rgba(40, 167, 69, 0.15)' : 'rgba(220, 53, 69, 0.15)';
             ctx.fill();
         }
 
