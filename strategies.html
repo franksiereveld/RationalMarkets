@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Community Strategies - RationalMarkets</title>
+    <meta name="description" content="Browse and follow community investment strategies">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            color: white;
+        }
+        .header h1 {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .stat-card h3 {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 0.5rem;
+        }
+        .stat-card p {
+            color: #6c757d;
+            margin: 0;
+        }
+        .strategy-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .strategy-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+        .author-info {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        .author-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-right: 1rem;
+        }
+        .strategy-type-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-right: 0.5rem;
+        }
+        .bullish { background: #d4edda; color: #155724; }
+        .bearish { background: #f8d7da; color: #721c24; }
+        .neutral { background: #d1ecf1; color: #0c5460; }
+        .risk-low { background: #d4edda; color: #155724; }
+        .risk-moderate { background: #fff3cd; color: #856404; }
+        .risk-high { background: #f8d7da; color: #721c24; }
+        .performance-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+            margin: 1rem 0;
+        }
+        .performance-item {
+            text-align: center;
+            padding: 0.5rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .performance-item .label {
+            font-size: 0.75rem;
+            color: #6c757d;
+        }
+        .performance-item .value {
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+        .positive { color: #28a745; }
+        .negative { color: #dc3545; }
+        .positions-preview {
+            margin: 1rem 0;
+        }
+        .position-tag {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            margin: 0.25rem;
+            border-radius: 5px;
+            font-size: 0.85rem;
+        }
+        .long-tag {
+            background: #d4edda;
+            color: #155724;
+        }
+        .short-tag {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .filters {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+        }
+        .btn-follow {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 0.5rem 1.5rem;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+        .btn-follow:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .btn-following {
+            background: #6c757d;
+        }
+        .stars {
+            color: #ffc107;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Header -->
+        <div class="header">
+            <h1><i class="fas fa-users me-3"></i>Community Strategies</h1>
+            <p class="lead">Discover and follow investment strategies from the community</p>
+            <a href="index.html" class="btn btn-outline-light mt-3">
+                <i class="fas fa-home me-2"></i>Back to Home
+            </a>
+        </div>
+
+        <!-- Community Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3 id="totalStrategies">6</h3>
+                <p>Total Strategies</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="activeTraders">6</h3>
+                <p>Active Traders</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="avgRating">4.4 <i class="fas fa-star stars"></i></h3>
+                <p>Average Rating</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="totalFollowers">2,145</h3>
+                <p>Total Followers</p>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters">
+            <div class="row">
+                <div class="col-md-3">
+                    <label class="form-label">Strategy Type</label>
+                    <select class="form-select" id="typeFilter">
+                        <option value="all">All Types</option>
+                        <option value="bullish">Bullish</option>
+                        <option value="bearish">Bearish</option>
+                        <option value="neutral">Neutral</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Risk Level</label>
+                    <select class="form-select" id="riskFilter">
+                        <option value="all">All Levels</option>
+                        <option value="low">Low Risk</option>
+                        <option value="moderate">Moderate Risk</option>
+                        <option value="high">High Risk</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Sort By</label>
+                    <select class="form-select" id="sortBy">
+                        <option value="recent">Most Recent</option>
+                        <option value="rating">Highest Rated</option>
+                        <option value="followers">Most Followed</option>
+                        <option value="returns">Best Returns</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">&nbsp;</label>
+                    <button class="btn btn-primary w-100" onclick="applyFilters()">
+                        <i class="fas fa-filter me-2"></i>Apply Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Strategies List -->
+        <div id="strategiesList"></div>
+    </div>
+
+    <script>
+        // Sample strategies data
+        const strategies = [
+            {
+                id: 1,
+                name: "AI Bubble Short Strategy",
+                author: "BearMarket Pro",
+                authorInitials: "BP",
+                type: "bearish",
+                risk: "high",
+                rating: 4.5,
+                followers: 342,
+                date: "2025-10-10",
+                returns: { "1m": -2.3, "3m": 8.5, "6m": 15.2, "1y": 22.8 },
+                longPositions: ["VIX", "SQQQ"],
+                shortPositions: ["NVDA", "TSLA", "PLTR", "C3AI"]
+            },
+            {
+                id: 2,
+                name: "AI Growth Long Strategy",
+                author: "TechBull Investor",
+                authorInitials: "TI",
+                type: "bullish",
+                risk: "moderate",
+                rating: 4.8,
+                followers: 589,
+                date: "2025-10-12",
+                returns: { "1m": 5.2, "3m": 18.7, "6m": 35.4, "1y": 68.9 },
+                longPositions: ["NVDA", "MSFT", "GOOGL", "META"],
+                shortPositions: []
+            },
+            {
+                id: 3,
+                name: "Semiconductor Supercycle",
+                author: "ChipMaster",
+                authorInitials: "CM",
+                type: "bullish",
+                risk: "moderate",
+                rating: 4.3,
+                followers: 234,
+                date: "2025-10-08",
+                returns: { "1m": 3.8, "3m": 12.4, "6m": 28.6, "1y": 45.3 },
+                longPositions: ["NVDA", "AMD", "TSM", "ASML"],
+                shortPositions: ["INTC"]
+            },
+            {
+                id: 4,
+                name: "Cloud Infrastructure Dominance",
+                author: "CloudKing",
+                authorInitials: "CK",
+                type: "bullish",
+                risk: "low",
+                rating: 4.6,
+                followers: 445,
+                date: "2025-10-11",
+                returns: { "1m": 2.1, "3m": 8.9, "6m": 19.2, "1y": 32.5 },
+                longPositions: ["MSFT", "GOOGL", "AMZN", "ORCL"],
+                shortPositions: []
+            },
+            {
+                id: 5,
+                name: "Traditional Media Collapse",
+                author: "MediaShort",
+                authorInitials: "MS",
+                type: "bearish",
+                risk: "high",
+                rating: 3.9,
+                followers: 156,
+                date: "2025-10-09",
+                returns: { "1m": 1.2, "3m": 5.8, "6m": 12.3, "1y": 18.7 },
+                longPositions: [],
+                shortPositions: ["NWSA", "WPP", "DIS", "CMCSA"]
+            },
+            {
+                id: 6,
+                name: "EV Revolution Portfolio",
+                author: "EVFuture",
+                authorInitials: "EV",
+                type: "bullish",
+                risk: "high",
+                rating: 4.1,
+                followers: 378,
+                date: "2025-10-13",
+                returns: { "1m": 4.5, "3m": 15.2, "6m": 32.8, "1y": 55.6 },
+                longPositions: ["TSLA", "RIVN", "LCID", "NIO"],
+                shortPositions: ["F", "GM"]
+            }
+        ];
+
+        // Load followed strategies from localStorage
+        let followedStrategies = JSON.parse(localStorage.getItem('followedStrategies') || '[]');
+
+        function renderStrategies(strategiesToRender = strategies) {
+            const container = document.getElementById('strategiesList');
+            container.innerHTML = '';
+
+            strategiesToRender.forEach(strategy => {
+                const isFollowing = followedStrategies.includes(strategy.id);
+                const strategyHTML = `
+                    <div class="strategy-card" data-type="${strategy.type}" data-risk="${strategy.risk}">
+                        <div class="author-info">
+                            <div class="author-avatar">${strategy.authorInitials}</div>
+                            <div>
+                                <h5 class="mb-0">${strategy.name}</h5>
+                                <small class="text-muted">by ${strategy.author} • ${strategy.date}</small>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <span class="strategy-type-badge ${strategy.type}">${strategy.type.toUpperCase()}</span>
+                            <span class="strategy-type-badge risk-${strategy.risk}">${strategy.risk.toUpperCase()} RISK</span>
+                            <span class="ms-3">
+                                <span class="stars">${'★'.repeat(Math.floor(strategy.rating))}${'☆'.repeat(5-Math.floor(strategy.rating))}</span>
+                                <strong>${strategy.rating}</strong>
+                            </span>
+                            <span class="ms-3 text-muted">
+                                <i class="fas fa-users"></i> ${strategy.followers} followers
+                            </span>
+                        </div>
+
+                        <div class="performance-grid">
+                            <div class="performance-item">
+                                <div class="label">1M</div>
+                                <div class="value ${strategy.returns['1m'] >= 0 ? 'positive' : 'negative'}">
+                                    ${strategy.returns['1m'] >= 0 ? '+' : ''}${strategy.returns['1m']}%
+                                </div>
+                            </div>
+                            <div class="performance-item">
+                                <div class="label">3M</div>
+                                <div class="value ${strategy.returns['3m'] >= 0 ? 'positive' : 'negative'}">
+                                    ${strategy.returns['3m'] >= 0 ? '+' : ''}${strategy.returns['3m']}%
+                                </div>
+                            </div>
+                            <div class="performance-item">
+                                <div class="label">6M</div>
+                                <div class="value ${strategy.returns['6m'] >= 0 ? 'positive' : 'negative'}">
+                                    ${strategy.returns['6m'] >= 0 ? '+' : ''}${strategy.returns['6m']}%
+                                </div>
+                            </div>
+                            <div class="performance-item">
+                                <div class="label">1Y</div>
+                                <div class="value ${strategy.returns['1y'] >= 0 ? 'positive' : 'negative'}">
+                                    ${strategy.returns['1y'] >= 0 ? '+' : ''}${strategy.returns['1y']}%
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="positions-preview">
+                            ${strategy.longPositions.length > 0 ? `
+                                <div class="mb-2">
+                                    <strong><i class="fas fa-arrow-up text-success"></i> Long:</strong>
+                                    ${strategy.longPositions.map(p => `<span class="position-tag long-tag">${p}</span>`).join('')}
+                                </div>
+                            ` : ''}
+                            ${strategy.shortPositions.length > 0 ? `
+                                <div>
+                                    <strong><i class="fas fa-arrow-down text-danger"></i> Short:</strong>
+                                    ${strategy.shortPositions.map(p => `<span class="position-tag short-tag">${p}</span>`).join('')}
+                                </div>
+                            ` : ''}
+                        </div>
+
+                        <div class="mt-3">
+                            <button class="btn ${isFollowing ? 'btn-following' : 'btn-follow'}" onclick="toggleFollow(${strategy.id})">
+                                <i class="fas ${isFollowing ? 'fa-check' : 'fa-plus'}"></i>
+                                ${isFollowing ? 'Following' : 'Follow'}
+                            </button>
+                            <button class="btn btn-outline-primary ms-2">
+                                <i class="fas fa-eye"></i> View Details
+                            </button>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += strategyHTML;
+            });
+        }
+
+        function toggleFollow(strategyId) {
+            const index = followedStrategies.indexOf(strategyId);
+            if (index > -1) {
+                followedStrategies.splice(index, 1);
+                const strategy = strategies.find(s => s.id === strategyId);
+                strategy.followers--;
+            } else {
+                followedStrategies.push(strategyId);
+                const strategy = strategies.find(s => s.id === strategyId);
+                strategy.followers++;
+            }
+            localStorage.setItem('followedStrategies', JSON.stringify(followedStrategies));
+            updateStats();
+            renderStrategies(getFilteredStrategies());
+        }
+
+        function applyFilters() {
+            const filtered = getFilteredStrategies();
+            renderStrategies(filtered);
+        }
+
+        function getFilteredStrategies() {
+            const typeFilter = document.getElementById('typeFilter').value;
+            const riskFilter = document.getElementById('riskFilter').value;
+            const sortBy = document.getElementById('sortBy').value;
+
+            let filtered = strategies.filter(s => {
+                const typeMatch = typeFilter === 'all' || s.type === typeFilter;
+                const riskMatch = riskFilter === 'all' || s.risk === riskFilter;
+                return typeMatch && riskMatch;
+            });
+
+            // Sort
+            if (sortBy === 'rating') {
+                filtered.sort((a, b) => b.rating - a.rating);
+            } else if (sortBy === 'followers') {
+                filtered.sort((a, b) => b.followers - a.followers);
+            } else if (sortBy === 'returns') {
+                filtered.sort((a, b) => b.returns['1y'] - a.returns['1y']);
+            } else if (sortBy === 'recent') {
+                filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+            }
+
+            return filtered;
+        }
+
+        function updateStats() {
+            const totalFollowers = strategies.reduce((sum, s) => sum + s.followers, 0);
+            const avgRating = (strategies.reduce((sum, s) => sum + s.rating, 0) / strategies.length).toFixed(1);
+            
+            document.getElementById('totalStrategies').textContent = strategies.length;
+            document.getElementById('activeTraders').textContent = strategies.length;
+            document.getElementById('avgRating').innerHTML = `${avgRating} <i class="fas fa-star stars"></i>`;
+            document.getElementById('totalFollowers').textContent = totalFollowers.toLocaleString();
+        }
+
+        // Initialize
+        renderStrategies();
+        updateStats();
+    </script>
+</body>
+</html>
+
