@@ -419,18 +419,17 @@
                 const card = document.createElement('div');
                 card.className = `position-card ${isLong ? 'long-position' : 'short-position'}`;
                 
-                // Use real financial data if available, otherwise generate mock data
+                // Use real financial data only - no mock data
                 const financialData = position.financialData || null;
-                const mockData = financialData ? null : generateMockFinancialData(position.symbol);
                 
-                // Extract data from either real or mock source
-                const priceChange = financialData ? financialData.priceChange : mockData.priceChange;
-                const currentPrice = financialData ? `$${financialData.currentPrice}` : mockData.price;
-                const marketCap = financialData ? financialData.marketCap : mockData.marketCap;
-                const pe = financialData && financialData.multiples.pe ? financialData.multiples.pe : (mockData ? mockData.pe : 'N/A');
-                const ps = financialData && financialData.multiples.ps ? financialData.multiples.ps : (mockData ? mockData.ps : 'N/A');
-                const pb = financialData && financialData.multiples.pb ? financialData.multiples.pb : (mockData ? mockData.pb : 'N/A');
-                const evEbitda = financialData && financialData.multiples.evEbitda ? financialData.multiples.evEbitda : (mockData ? mockData.ev_ebitda : 'N/A');
+                // Extract data from real source only
+                const priceChange = financialData.sixMonthReturn || 0;
+                const currentPrice = `$${financialData.currentPrice}`;
+                const marketCap = financialData.marketCap;
+                const pe = financialData.pe || 'N/A';
+                const ps = financialData.ps || 'N/A';
+                const pb = financialData.pb || 'N/A';
+                const evEbitda = financialData.evEbitda || 'N/A';
                 
                 card.innerHTML = `
                     <div class="d-flex justify-content-between align-items-start mb-3">
@@ -505,11 +504,9 @@
                 `;
                 container.appendChild(card);
                 
-                // Draw the chart after the element is added to DOM
+                // Draw the chart after the element is added to DOM (real data only)
                 if (financialData && financialData.chartData && financialData.chartData.length > 0) {
                     setTimeout(() => drawRealChart(position.symbol, financialData), 100);
-                } else {
-                    setTimeout(() => drawMockChart(position.symbol, mockData || {priceChange: 0, price: '$0.00'}), 100);
                 }
             });
         }
