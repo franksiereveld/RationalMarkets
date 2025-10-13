@@ -1,3 +1,3 @@
-web: python app.py
-release: echo "AI Long/Short Investment Club deployed successfully"
+web: gunicorn api_server_v2:app
+release: echo "RationalMarkets AI Analysis API deployed successfully"
 
