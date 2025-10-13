@@ -173,9 +173,9 @@
         <div class="header">
             <h1><i class="fas fa-users me-3"></i>Community Trades</h1>
             <p class="lead">Discover and follow investment strategies from the community</p>
-            <a href="index.html" class="btn btn-outline-light mt-3">
-                <i class="fas fa-home me-2"></i>Back to Home
-            </a>
+                            <a href="index.html" class="btn btn-outline-light position-absolute" style="top: 20px; left: 20px;">
+        <i class="fas fa-arrow-left me-2"></i>Back to Home
+    </a>
         </div>
 
         <!-- Community Stats -->
@@ -255,8 +255,8 @@
                 investors: 342,
                 date: "2025-10-10",
                 returns: { "1m": -2.3, "3m": 8.5, "6m": 15.2, "1y": 22.8 },
-                longPositions: ["VIX", "SQQQ"],
-                shortPositions: ["NVDA", "TSLA", "PLTR", "C3AI"]
+                longPositions: [{symbol: "VIX", name: "CBOE Volatility Index"}, {symbol: "SQQQ", name: "ProShares UltraPro Short QQQ"}],
+                shortPositions: [{symbol: "NVDA", name: "NVIDIA Corporation"}, {symbol: "TSLA", name: "Tesla Inc."}, {symbol: "PLTR", name: "Palantir Technologies"}, {symbol: "C3AI", name: "C3.ai Inc."}]
             },
             {
                 id: 2,
@@ -269,7 +269,7 @@
                 investors: 589,
                 date: "2025-10-12",
                 returns: { "1m": 5.2, "3m": 18.7, "6m": 35.4, "1y": 68.9 },
-                longPositions: ["NVDA", "MSFT", "GOOGL", "META"],
+                longPositions: [{symbol: "NVDA", name: "NVIDIA Corporation"}, {symbol: "MSFT", name: "Microsoft Corporation"}, {symbol: "GOOGL", name: "Alphabet Inc."}, {symbol: "META", name: "Meta Platforms Inc."}],
                 shortPositions: []
             },
             {
@@ -284,7 +284,7 @@
                 date: "2025-10-08",
                 returns: { "1m": 3.8, "3m": 12.4, "6m": 28.6, "1y": 45.3 },
                 longPositions: ["NVDA", "AMD", "TSM", "ASML"],
-                shortPositions: ["INTC"]
+                shortPositions: [{symbol: "INTC", name: "Intel Corporation"}]
             },
             {
                 id: 4,
@@ -561,9 +561,9 @@
                 <div class="mb-3">
                     <h6>Long Positions</h6>
                     ${strategy.longPositions.map(pos => `
-                        <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
-                            <span><strong>${pos}</strong></span>
-                            <span class="text-success"><i class="fas fa-arrow-up"></i></span>
+                        <div class="d-flex justify-content-between align-items-center mb-2 p-2 rounded" style="background-color: #d4edda; border: 1px solid #c3e6cb;">
+                            <span style="color: #155724;"><strong>${pos.symbol || pos} - ${pos.name || ''}</strong></span>
+                            <span style="color: #155724;"><i class="fas fa-arrow-up"></i></span>
                         </div>
                     `).join('')}
                 </div>
@@ -572,9 +572,9 @@
                 <div class="mb-3">
                     <h6>Short Positions</h6>
                     ${strategy.shortPositions.map(pos => `
-                        <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
-                            <span><strong>${pos}</strong></span>
-                            <span class="text-danger"><i class="fas fa-arrow-down"></i></span>
+                        <div class="d-flex justify-content-between align-items-center mb-2 p-2 rounded" style="background-color: #f8d7da; border: 1px solid #f5c6cb;">
+                            <span style="color: #721c24;"><strong>${pos.symbol || pos} - ${pos.name || ''}</strong></span>
+                            <span style="color: #721c24;"><i class="fas fa-arrow-down"></i></span>
                         </div>
                     `).join('')}
                 </div>
