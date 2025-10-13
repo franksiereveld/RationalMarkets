@@ -354,11 +354,11 @@
                         { symbol: 'C3AI', name: 'C3.ai Inc.', allocation: '10%', rationale: 'Pure AI play with massive losses and uncertain path to profitability' }
                     ],
                     returnEstimates: {
-                        '1M': '12.5%',
-                        '3M': '28.7%',
-                        '6M': '45.2%',
-                        '1Y': '65.8%',
-                        '3Y': '85.4%'
+                        '1M': { value: '12.5%', rationale: 'Initial market recognition of AI overvaluation begins, early short positions start paying off as sentiment shifts' },
+                        '3M': { value: '28.7%', rationale: 'Bubble concerns spread through financial media, institutional investors reduce AI exposure, volatility hedges perform well' },
+                        '6M': { value: '45.2%', rationale: 'Major correction in overvalued AI stocks as earnings disappoint, short positions deliver strong returns' },
+                        '1Y': { value: '65.8%', rationale: 'Full market repricing of AI valuations to sustainable levels, portfolio benefits from both shorts and volatility positions' },
+                        '3Y': { value: '85.4%', rationale: 'Long-term reversion to mean valuations complete, strategy captures extended downtrend in speculative AI names' }
                     },
                     aiRationale: 'This bearish AI bubble strategy targets the most overvalued AI stocks for short positions while using volatility hedges. The thesis is that AI valuations have reached unsustainable levels, with companies trading at extreme multiples without corresponding revenue growth. Short positions focus on pure-play AI stocks with the highest valuations and most speculative business models. The strategy includes volatility hedges to profit from market turbulence during the correction. High risk due to potential for continued irrational exuberance, but strong potential returns if AI bubble deflates.'
                 };
@@ -379,11 +379,11 @@
                         { symbol: 'HRB', name: 'H&R Block Inc.', allocation: '10%', rationale: 'Tax preparation being automated by AI tools' }
                     ],
                     returnEstimates: {
-                        '1M': '8.5%',
-                        '3M': '15.2%',
-                        '6M': '28.7%',
-                        '1Y': '45.3%',
-                        '3Y': '125.8%'
+                        '1M': { value: '8.5%', rationale: 'Strong AI earnings reports drive initial momentum, market recognizes AI infrastructure value' },
+                        '3M': { value: '15.2%', rationale: 'AI adoption accelerates across enterprises, revenue growth validates high valuations for leaders' },
+                        '6M': { value: '28.7%', rationale: 'AI beneficiaries report expanding margins, disruption of traditional industries becomes evident' },
+                        '1Y': { value: '45.3%', rationale: 'AI revolution fully underway, long positions compound gains while shorts on disrupted sectors pay off' },
+                        '3Y': { value: '125.8%', rationale: 'Multi-year AI transformation creates sustained growth for technology leaders and persistent decline for disrupted industries' }
                     },
                     aiRationale: 'This AI disruption strategy capitalizes on the transformative impact of artificial intelligence across industries. The long positions target companies that are either developing AI technology (NVIDIA\'s chips, Microsoft\'s Azure AI) or successfully integrating AI into their business models. The short positions focus on traditional service industries that face significant disruption from AI automation. The risk is moderate due to diversification across multiple AI beneficiaries, though technology sector volatility should be expected.'
                 };
@@ -397,14 +397,47 @@
             document.getElementById('resultRecommendation').textContent = analysis.recommendation;
             document.getElementById('resultRisk').textContent = 'Risk: ' + analysis.riskLevel;
 
-            // Return estimates
+            // Return estimates with rationales
             const returnGrid = document.getElementById('returnGrid');
             returnGrid.innerHTML = '';
-            Object.entries(analysis.returnEstimates).forEach(([period, estimate]) => {
+            
+            // Build detailed rationale text
+            let rationaleHTML = '<div class="row g-3">';
+            
+            Object.entries(analysis.returnEstimates).forEach(([period, data]) => {
+                const value = typeof data === 'string' ? data : data.value;
+                const rationale = typeof data === 'object' ? data.rationale : '';
+                
+                // Create return card with tooltip
                 const card = document.createElement('div');
                 card.className = 'return-card';
-                card.innerHTML = `<h3>${estimate}</h3><p>${period}</p>`;
+                card.style.cursor = 'pointer';
+                card.setAttribute('data-bs-toggle', 'tooltip');
+                card.setAttribute('data-bs-placement', 'top');
+                card.setAttribute('title', rationale || 'Expected return for this time period');
+                card.innerHTML = `<h3>${value}</h3><p>${period}</p>`;
                 returnGrid.appendChild(card);
+                
+                // Add to detailed rationale section
+                if (rationale) {
+                    rationaleHTML += `
+                        <div class="col-12">
+                            <div class="p-3 bg-white rounded border-start border-4 border-primary">
+                                <strong class="text-primary">${period} (${value}):</strong>
+                                <p class="mb-0 mt-2 text-muted">${rationale}</p>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+            
+            rationaleHTML += '</div>';
+            document.getElementById('returnRationaleText').innerHTML = rationaleHTML;
+            
+            // Initialize Bootstrap tooltips
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
             });
 
             // Long positions
