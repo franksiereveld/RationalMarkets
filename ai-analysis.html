@@ -259,7 +259,7 @@
                     <i class="fas fa-plus me-2"></i>Suggest Another Trade
                 </button>
                 <button class="btn btn-success btn-lg" onclick="trackTrade()">
-                    <i class="fas fa-chart-line me-2"></i>Track This Trade
+                    <i class="fas fa-chart-line me-2"></i>Invest in This Trade
                 </button>
             </div>
         </div>
@@ -798,9 +798,156 @@
             document.getElementById('analysisResults').style.display = 'none';
         }
 
-        function trackTrade() {
-            alert('Trade tracking functionality will be implemented in the next phase!');
-        }
     </script>
+<!-- Investment Modal - Add this before the closing </div> of main-container -->
+<div id="investmentModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-dollar-sign me-2"></i>Invest in This Trade</h3>
+        </div>
+        <div class="modal-body">
+            <p class="mb-4">Enter the amount you'd like to invest in this strategy:</p>
+            
+            <div class="mb-4">
+                <label for="investmentAmount" class="form-label fw-bold">Investment Amount</label>
+                <div class="input-group">
+                    <input type="number" class="form-control" id="investmentAmount" placeholder="1000" min="0" step="100">
+                    <select class="form-select" id="investmentCurrency" style="max-width: 100px;">
+                        <option value="USD">$</option>
+                        <option value="EUR">€</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Educational Platform:</strong> This is a simulated investment for learning purposes only.
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-light btn-lg me-2" onclick="closeInvestmentModal()">
+                <i class="fas fa-times me-2"></i>Decline
+            </button>
+            <button class="btn btn-success btn-lg" onclick="confirmInvestment()">
+                <i class="fas fa-check me-2"></i>Invest
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 15px;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+    padding: 2rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #333;
+}
+
+.modal-body {
+    padding: 2rem;
+}
+
+.modal-footer {
+    padding: 1.5rem 2rem;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.input-group {
+    display: flex;
+}
+
+.input-group .form-control {
+    flex: 1;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.input-group .form-select {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    border-left: none;
+}
+</style>
+
+<script>
+function trackTrade() {
+    // Show investment modal
+    document.getElementById('investmentModal').style.display = 'flex';
+    document.getElementById('investmentAmount').focus();
+}
+
+function closeInvestmentModal() {
+    document.getElementById('investmentModal').style.display = 'none';
+    document.getElementById('investmentAmount').value = '';
+}
+
+function confirmInvestment() {
+    const amount = parseFloat(document.getElementById('investmentAmount').value);
+    const currency = document.getElementById('investmentCurrency').value;
+    
+    if (!amount || amount <= 0) {
+        alert('Please enter a valid investment amount');
+        return;
+    }
+    
+    // Save to localStorage
+    const investment = {
+        ...currentAnalysisResult,
+        investmentAmount: amount,
+        currency: currency,
+        investedDate: new Date().toISOString()
+    };
+    
+    // Get existing trades
+    const myTrades = JSON.parse(localStorage.getItem('myTrades') || '[]');
+    myTrades.push(investment);
+    localStorage.setItem('myTrades', JSON.stringify(myTrades));
+    
+    // Close modal
+    closeInvestmentModal();
+    
+    // Show success message
+    alert(`Successfully invested ${currency === 'USD' ? '$' : '€'}${amount.toLocaleString()} in "${currentAnalysisResult.tradeName}"!\\n\\nYou can view your positions in the My Positions page.`);
+    
+    // Optional: redirect to My Positions page
+    // window.location.href = 'my-positions.html';
+}
+
+// Close modal when clicking outside
+document.getElementById('investmentModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeInvestmentModal();
+    }
+});
+</script>
+
+
+
 </body>
 </html>
