@@ -860,37 +860,6 @@
             }
         }
 
-            // Get existing trades from localStorage
-            const trades = JSON.parse(localStorage.getItem('myTrades') || '[]');
-
-            // Create trade object
-            const trade = {
-                tradeName: document.getElementById('tradeName').value,
-                tradeDescription: document.getElementById('tradeDescription').value,
-                investmentAmount: document.getElementById('investmentAmount').value,
-                currency: document.getElementById('currency').value,
-                tradeDescription: document.getElementById('tradeDescription').value,
-                recommendation: currentAnalysisResult.recommendation,
-                risk: currentAnalysisResult.risk,
-                rationale: currentAnalysisResult.rationale,
-                positions: currentAnalysisResult.positions,
-                returnEstimates: currentAnalysisResult.returnEstimates,
-                createdAt: new Date().toISOString()
-            };
-
-            // Add to trades array
-            trades.unshift(trade); // Add to beginning
-
-            // Save to localStorage
-            localStorage.setItem('myTrades', JSON.stringify(trades));
-
-            // Show success message
-            alert('Trade saved to My Positions!');
-
-            // Change button text
-            document.getElementById('saveTradeBtn').innerHTML = '<i class="fas fa-check me-2"></i>Saved!';
-            document.getElementById('saveTradeBtn').disabled = true;
-        }
 
         function resetForm() {
             document.getElementById('tradeName').value = '';
@@ -900,7 +869,27 @@
         }
 
         function trackTrade() {
-            alert('Trade tracking functionality will be implemented in the next phase!');
+            if (!currentAnalysisResult) {
+                alert('No trade analysis to track');
+                return;
+            }
+            
+            const trades = JSON.parse(localStorage.getItem('myTrades') || '[]');
+            
+            // Check if trade already exists
+            const existingIndex = trades.findIndex(t => t.tradeName === currentAnalysisResult.tradeName);
+            if (existingIndex > -1) {
+                trades[existingIndex] = currentAnalysisResult;
+                alert('Trade updated successfully!');
+            } else {
+                trades.push(currentAnalysisResult);
+                alert('Trade tracked successfully! View it in My Positions.');
+            }
+            
+            localStorage.setItem('myTrades', JSON.stringify(trades));
+            
+            // Show delete button after tracking
+            document.getElementById('deleteTradeBtn').style.display = 'inline-block';
         }
 
         function deleteTrade() {
@@ -926,7 +915,7 @@
     <!-- Footer -->
     <footer class="mt-5 py-4 text-white text-center">
         <div class="container">
-            <p class="mb-2">© 2024 RationalMarkets - Educational Platform for AI Investment Strategy Learning</p>
+            <p class="mb-2">© 2025 RationalMarkets - Educational Platform for AI Investment Strategy Learning</p>
             <div class="d-flex justify-content-center gap-3 mb-2">
                 <a href="disclaimer.html" class="text-white text-decoration-none">Legal Disclaimer</a>
                 <a href="index.html" class="text-white text-decoration-none">Home</a>
