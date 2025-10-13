@@ -256,7 +256,11 @@
     </div>
 
     <script>
-        function analyzeTradeWithAI() {
+        // Configuration: Set to true to use real AI API, false for mock analysis
+        const USE_REAL_AI = false;  // Will be set to true once backend is deployed
+        const API_ENDPOINT = 'https://your-railway-app.railway.app/api/analyze-trade';  // Update after Railway deployment
+
+        async function analyzeTradeWithAI() {
             const tradeName = document.getElementById('tradeName').value.trim();
             const tradeDescription = document.getElementById('tradeDescription').value.trim();
             
@@ -269,14 +273,45 @@
             document.getElementById('inputForm').style.display = 'none';
             document.getElementById('loadingState').style.display = 'block';
 
-            // Simulate AI analysis
-            setTimeout(() => {
-                const analysis = generateAIAnalysis(tradeName, tradeDescription);
-                displayAnalysis(analysis);
-                
-                document.getElementById('loadingState').style.display = 'none';
-                document.getElementById('analysisResults').style.display = 'block';
-            }, 3000);
+            if (USE_REAL_AI) {
+                // Call real AI API
+                try {
+                    const response = await fetch(API_ENDPOINT, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            tradeName: tradeName,
+                            tradeDescription: tradeDescription
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`API error: ${response.status}`);
+                    }
+
+                    const analysis = await response.json();
+                    displayAnalysis(analysis);
+                    
+                    document.getElementById('loadingState').style.display = 'none';
+                    document.getElementById('analysisResults').style.display = 'block';
+                } catch (error) {
+                    console.error('AI Analysis Error:', error);
+                    alert('Failed to analyze trade. Please try again. Error: ' + error.message);
+                    document.getElementById('loadingState').style.display = 'none';
+                    document.getElementById('inputForm').style.display = 'block';
+                }
+            } else {
+                // Use mock analysis
+                setTimeout(() => {
+                    const analysis = generateAIAnalysis(tradeName, tradeDescription);
+                    displayAnalysis(analysis);
+                    
+                    document.getElementById('loadingState').style.display = 'none';
+                    document.getElementById('analysisResults').style.display = 'block';
+                }, 3000);
+            }
         }
 
         function generateAIAnalysis(tradeName, tradeDescription) {
@@ -379,8 +414,18 @@
                 const card = document.createElement('div');
                 card.className = `position-card ${isLong ? 'long-position' : 'short-position'}`;
                 
-                // Generate mock financial data
-                const mockData = generateMockFinancialData(position.symbol);
+                // Use real financial data if available, otherwise generate mock data
+                const financialData = position.financialData || null;
+                const mockData = financialData ? null : generateMockFinancialData(position.symbol);
+                
+                // Extract data from either real or mock source
+                const priceChange = financialData ? financialData.priceChange : mockData.priceChange;
+                const currentPrice = financialData ? `$${financialData.currentPrice}` : mockData.price;
+                const marketCap = financialData ? financialData.marketCap : mockData.marketCap;
+                const pe = financialData && financialData.multiples.pe ? financialData.multiples.pe : (mockData ? mockData.pe : 'N/A');
+                const ps = financialData && financialData.multiples.ps ? financialData.multiples.ps : (mockData ? mockData.ps : 'N/A');
+                const pb = financialData && financialData.multiples.pb ? financialData.multiples.pb : (mockData ? mockData.pb : 'N/A');
+                const evEbitda = financialData && financialData.multiples.evEbitda ? financialData.multiples.evEbitda : (mockData ? mockData.ev_ebitda : 'N/A');
                 
                 card.innerHTML = `
                     <div class="d-flex justify-content-between align-items-start mb-3">
@@ -399,8 +444,8 @@
                                 <small class="text-muted">6M Price Chart</small>
                             </div>
                             <div style="position: absolute; top: 10px; right: 15px;">
-                                <span class="badge ${mockData.priceChange >= 0 ? 'bg-success' : 'bg-danger'}">
-                                    ${mockData.priceChange >= 0 ? '+' : ''}${mockData.priceChange.toFixed(1)}%
+                                <span class="badge ${priceChange >= 0 ? 'bg-success' : 'bg-danger'}">
+                                    ${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(1)}%
                                 </span>
                             </div>
                         </div>
@@ -410,25 +455,25 @@
                     <div class="row mb-3">
                         <div class="col-3">
                             <div class="text-center p-2" style="background: rgba(0,123,255,0.1); border-radius: 6px;">
-                                <div class="fw-bold text-primary">${mockData.pe}</div>
+                                <div class="fw-bold text-primary">${pe}</div>
                                 <small class="text-muted">P/E</small>
                             </div>
                         </div>
                         <div class="col-3">
                             <div class="text-center p-2" style="background: rgba(40,167,69,0.1); border-radius: 6px;">
-                                <div class="fw-bold text-success">${mockData.ps}</div>
+                                <div class="fw-bold text-success">${ps}</div>
                                 <small class="text-muted">P/S</small>
                             </div>
                         </div>
                         <div class="col-3">
                             <div class="text-center p-2" style="background: rgba(255,193,7,0.1); border-radius: 6px;">
-                                <div class="fw-bold text-warning">${mockData.pb}</div>
+                                <div class="fw-bold text-warning">${pb}</div>
                                 <small class="text-muted">P/B</small>
                             </div>
                         </div>
                         <div class="col-3">
                             <div class="text-center p-2" style="background: rgba(220,53,69,0.1); border-radius: 6px;">
-                                <div class="fw-bold text-danger">${mockData.ev_ebitda}</div>
+                                <div class="fw-bold text-danger">${evEbitda}</div>
                                 <small class="text-muted">EV/EBITDA</small>
                             </div>
                         </div>
@@ -438,13 +483,13 @@
                     <div class="row mb-3">
                         <div class="col-6">
                             <div class="text-center p-2" style="background: rgba(108,117,125,0.1); border-radius: 6px;">
-                                <div class="fw-bold">${mockData.price}</div>
+                                <div class="fw-bold">${currentPrice}</div>
                                 <small class="text-muted">Current Price</small>
                             </div>
                         </div>
                         <div class="col-6">
                             <div class="text-center p-2" style="background: rgba(108,117,125,0.1); border-radius: 6px;">
-                                <div class="fw-bold">${mockData.marketCap}</div>
+                                <div class="fw-bold">${marketCap}</div>
                                 <small class="text-muted">Market Cap</small>
                             </div>
                         </div>
@@ -456,8 +501,61 @@
                 container.appendChild(card);
                 
                 // Draw the chart after the element is added to DOM
-                setTimeout(() => drawMockChart(position.symbol, mockData), 100);
+                if (financialData && financialData.chartData && financialData.chartData.length > 0) {
+                    setTimeout(() => drawRealChart(position.symbol, financialData), 100);
+                } else {
+                    setTimeout(() => drawMockChart(position.symbol, mockData || {priceChange: 0, price: '$0.00'}), 100);
+                }
             });
+        }
+        
+        function drawRealChart(symbol, financialData) {
+            const canvas = document.getElementById(`chart-${symbol}`);
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            const width = canvas.offsetWidth;
+            const height = 200;
+            canvas.width = width;
+            canvas.height = height;
+            
+            const chartData = financialData.chartData;
+            if (chartData.length === 0) return;
+            
+            // Extract prices
+            const prices = chartData.map(d => d.price);
+            const minPrice = Math.min(...prices);
+            const maxPrice = Math.max(...prices);
+            const priceRange = maxPrice - minPrice;
+            
+            // Draw chart background
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.fillRect(0, 0, width, height);
+            
+            // Draw price line
+            ctx.beginPath();
+            ctx.strokeStyle = financialData.priceChange >= 0 ? '#28a745' : '#dc3545';
+            ctx.lineWidth = 2;
+            
+            chartData.forEach((point, index) => {
+                const x = (index / (chartData.length - 1)) * width;
+                const y = height - ((point.price - minPrice) / priceRange) * (height - 40) - 20;
+                
+                if (index === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            });
+            
+            ctx.stroke();
+            
+            // Fill area under curve
+            ctx.lineTo(width, height - 20);
+            ctx.lineTo(0, height - 20);
+            ctx.closePath();
+            ctx.fillStyle = financialData.priceChange >= 0 ? 'rgba(40, 167, 69, 0.1)' : 'rgba(220, 53, 69, 0.1)';
+            ctx.fill();
         }
 
         function generateMockFinancialData(symbol) {
