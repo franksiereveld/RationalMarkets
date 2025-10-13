@@ -314,9 +314,20 @@
                     document.getElementById('analysisResults').style.display = 'block';
                 } catch (error) {
                     console.error('AI Analysis Error:', error);
-                    alert('Failed to analyze trade. Please try again. Error: ' + error.message);
+                    console.log('Falling back to mock analysis...');
+                    
+                    // Fallback to mock analysis
+                    const mockAnalysis = generateAIAnalysis(tradeName, tradeDescription);
+                    displayAnalysis(mockAnalysis);
+                    
                     document.getElementById('loadingState').style.display = 'none';
-                    document.getElementById('inputForm').style.display = 'block';
+                    document.getElementById('analysisResults').style.display = 'block';
+                    
+                    // Show a subtle notice that mock data is being used
+                    const notice = document.createElement('div');
+                    notice.className = 'alert alert-info mt-3';
+                    notice.innerHTML = '<i class="fas fa-info-circle me-2"></i>Using demo analysis (API temporarily unavailable)';
+                    document.getElementById('analysisResults').prepend(notice);
                 }
             } else {
                 // Use mock analysis
