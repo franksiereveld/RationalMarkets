@@ -475,17 +475,23 @@
                 card.className = `position-card ${isLong ? 'long-position' : 'short-position'}`;
                 
                 // Use real financial data if available, otherwise generate mock data
-                const financialData = position.financialData || null;
-                const mockData = financialData ? null : generateMockFinancialData(position.symbol);
+                const rawFinancialData = position.financialData || null;
+                
+                // Handle nested financialData structure from API
+                const financialData = rawFinancialData && rawFinancialData.financialData ? rawFinancialData.financialData : rawFinancialData;
+                
+                // Check if we have valid financial data or need mock data
+                const hasValidData = financialData && financialData.currentPrice && financialData.currentPrice > 0;
+                const mockData = hasValidData ? null : generateMockFinancialData(position.symbol);
                 
                 // Extract data from either real or mock source
-                const priceChange = financialData ? financialData.priceChange : mockData.priceChange;
-                const currentPrice = financialData ? `$${financialData.currentPrice}` : mockData.price;
-                const marketCap = financialData ? financialData.marketCap : mockData.marketCap;
-                const pe = financialData && financialData.multiples.pe ? financialData.multiples.pe : (mockData ? mockData.pe : 'N/A');
-                const ps = financialData && financialData.multiples.ps ? financialData.multiples.ps : (mockData ? mockData.ps : 'N/A');
-                const pb = financialData && financialData.multiples.pb ? financialData.multiples.pb : (mockData ? mockData.pb : 'N/A');
-                const evEbitda = financialData && financialData.multiples.evEbitda ? financialData.multiples.evEbitda : (mockData ? mockData.ev_ebitda : 'N/A');
+                const priceChange = hasValidData ? (financialData.priceChange || 0) : mockData.priceChange;
+                const currentPrice = hasValidData ? `$${financialData.currentPrice}` : mockData.price;
+                const marketCap = hasValidData ? (financialData.marketCap || 'N/A') : mockData.marketCap;
+                const pe = hasValidData && financialData.pe ? financialData.pe : (mockData ? mockData.pe : 'N/A');
+                const ps = hasValidData && financialData.ps ? financialData.ps : (mockData ? mockData.ps : 'N/A');
+                const pb = hasValidData && financialData.pb ? financialData.pb : (mockData ? mockData.pb : 'N/A');
+                const evEbitda = hasValidData && financialData.evEbitda ? financialData.evEbitda : (mockData ? mockData.ev_ebitda : 'N/A');
                 
                 card.innerHTML = `
                     <div class="d-flex justify-content-between align-items-start mb-3">
