@@ -257,8 +257,8 @@
 
     <script>
         // Configuration: Set to true to use real AI API, false for mock analysis
-        const USE_REAL_AI = false;  // Will be set to true once backend is deployed
-        const API_ENDPOINT = 'https://your-railway-app.railway.app/api/analyze-trade';  // Update after Railway deployment
+        const USE_REAL_AI = true;  // Real AI enabled - connected to Railway backend
+        const API_ENDPOINT = 'https://web-production-3b184.up.railway.app/api/analyze-trade';  // Production Railway API
 
         async function analyzeTradeWithAI() {
             const tradeName = document.getElementById('tradeName').value.trim();
