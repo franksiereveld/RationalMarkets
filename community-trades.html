@@ -392,13 +392,13 @@
                             ${strategy.longPositions.length > 0 ? `
                                 <div class="mb-2">
                                     <strong><i class="fas fa-arrow-up text-success"></i> Long:</strong>
-                                    ${strategy.longPositions.map(p => `<span class="position-tag long-tag">${p}</span>`).join('')}
+                                    ${strategy.longPositions.map(p => `<span class="position-tag long-tag">${typeof p === 'object' ? p.symbol : p}</span>`).join('')}
                                 </div>
                             ` : ''}
                             ${strategy.shortPositions.length > 0 ? `
                                 <div>
                                     <strong><i class="fas fa-arrow-down text-danger"></i> Short:</strong>
-                                    ${strategy.shortPositions.map(p => `<span class="position-tag short-tag">${p}</span>`).join('')}
+                                    ${strategy.shortPositions.map(p => `<span class="position-tag short-tag">${typeof p === 'object' ? p.symbol : p}</span>`).join('')}
                                 </div>
                             ` : ''}
                         </div>
