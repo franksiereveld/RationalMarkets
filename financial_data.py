@@ -6,6 +6,7 @@ Fetches real stock prices, multiples, and historical data using yfinance
 
 import yfinance as yf
 from datetime import datetime, timedelta
+import time
 
 def get_stock_data(symbol):
     """
@@ -15,31 +16,57 @@ def get_stock_data(symbol):
         dict: Stock data including price, multiples, and chart data
     """
     try:
+        # Add small delay to avoid rate limiting
+        time.sleep(0.5)
+        
         stock = yf.Ticker(symbol)
-        info = stock.info
+        
+        # Try to get basic info first
+        try:
+            info = stock.info
+        except Exception as e:
+            print(f"Warning: Could not fetch info for {symbol}: {str(e)}")
+            info = {}
         
         # Get historical data for 6-month chart
         end_date = datetime.now()
         start_date = end_date - timedelta(days=180)
-        hist = stock.history(start=start_date, end=end_date)
+        
+        try:
+            hist = stock.history(start=start_date, end=end_date)
+        except Exception as e:
+            print(f"Warning: Could not fetch history for {symbol}: {str(e)}")
+            hist = None
         
         # Calculate price change
-        if len(hist) > 0:
-            first_price = hist['Close'].iloc[0]
-            last_price = hist['Close'].iloc[-1]
-            price_change = ((last_price - first_price) / first_price) * 100
-        else:
-            price_change = 0
+        price_change = 0
+        if hist is not None and len(hist) > 0:
+            try:
+                first_price = hist['Close'].iloc[0]
+                last_price = hist['Close'].iloc[-1]
+                price_change = ((last_price - first_price) / first_price) * 100
+            except:
+                pass
         
-        # Extract financial multiples
-        pe_ratio = info.get('trailingPE', None) or info.get('forwardPE', None)
-        ps_ratio = info.get('priceToSalesTrailing12Months', None)
-        pb_ratio = info.get('priceToBook', None)
-        ev_ebitda = info.get('enterpriseToEbitda', None)
+        # Extract financial multiples with fallbacks
+        pe_ratio = info.get('trailingPE') or info.get('forwardPE')
+        ps_ratio = info.get('priceToSalesTrailing12Months')
+        pb_ratio = info.get('priceToBook')
+        ev_ebitda = info.get('enterpriseToEbitda')
         
-        # Get current price and market cap
-        current_price = info.get('currentPrice', None) or info.get('regularMarketPrice', None)
-        market_cap = info.get('marketCap', None)
+        # Get current price and market cap with multiple fallbacks
+        current_price = (info.get('currentPrice') or 
+                        info.get('regularMarketPrice') or 
+                        info.get('previousClose'))
+        
+        # If we have historical data but no current price, use last close
+        if not current_price and hist is not None and len(hist) > 0:
+            try:
+                current_price = float(hist['Close'].iloc[-1])
+            except:
+                current_price = 0
+        
+        market_cap = info.get('marketCap')
         
         # Format market cap
         if market_cap:
@@ -56,15 +83,18 @@ def get_stock_data(symbol):
         
         # Prepare chart data (simplified for frontend)
         chart_data = []
-        if len(hist) > 0:
-            # Sample 50 points for chart
-            sample_size = min(50, len(hist))
-            step = max(1, len(hist) // sample_size)
-            for i in range(0, len(hist), step):
-                chart_data.append({
-                    'date': hist.index[i].strftime('%Y-%m-%d'),
-                    'price': float(hist['Close'].iloc[i])
-                })
+        if hist is not None and len(hist) > 0:
+            try:
+                # Sample 50 points for chart
+                sample_size = min(50, len(hist))
+                step = max(1, len(hist) // sample_size)
+                for i in range(0, len(hist), step):
+                    chart_data.append({
+                        'date': hist.index[i].strftime('%Y-%m-%d'),
+                        'price': float(hist['Close'].iloc[i])
+                    })
+            except Exception as e:
+                print(f"Warning: Could not prepare chart data for {symbol}: {str(e)}")
         
         return {
             'symbol': symbol.upper(),
@@ -83,6 +113,8 @@ def get_stock_data(symbol):
     
     except Exception as e:
         print(f"Error fetching data for {symbol}: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return {
             'symbol': symbol.upper(),
             'currentPrice': 0,
@@ -113,6 +145,8 @@ def get_multiple_stocks_data(symbols):
     results = {}
     for symbol in symbols:
         results[symbol.upper()] = get_stock_data(symbol)
+        # Add small delay between requests to avoid rate limiting
+        time.sleep(0.3)
     return results
 
 

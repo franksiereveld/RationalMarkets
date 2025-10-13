@@ -1,8 +1,9 @@
-# Updated dependencies for Railway deployment with httpx compatibility fix
+# Updated dependencies for Railway deployment
 Flask==3.0.0
 Flask-CORS==4.0.0
 openai==1.54.0
 httpx==0.27.0
 yfinance==0.2.48
+curl-cffi==0.7.4
 gunicorn==21.2.0
 
