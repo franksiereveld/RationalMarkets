@@ -193,8 +193,8 @@
                 <p>Average Rating</p>
             </div>
             <div class="stat-card">
-                <h3 id="totalFollowers">2,145</h3>
-                <p>Total Followers</p>
+                <h3 id="totalInvesters">2,145</h3>
+                <p>Total Investers</p>
             </div>
         </div>
 
@@ -224,7 +224,7 @@
                     <select class="form-select" id="sortBy">
                         <option value="recent">Most Recent</option>
                         <option value="rating">Highest Rated</option>
-                        <option value="followers">Most Followed</option>
+                        <option value="investors">Most Invested</option>
                         <option value="returns">Best Returns</option>
                     </select>
                 </div>
@@ -252,7 +252,7 @@
                 type: "bearish",
                 risk: "high",
                 rating: 4.5,
-                followers: 342,
+                investors: 342,
                 date: "2025-10-10",
                 returns: { "1m": -2.3, "3m": 8.5, "6m": 15.2, "1y": 22.8 },
                 longPositions: ["VIX", "SQQQ"],
@@ -266,7 +266,7 @@
                 type: "bullish",
                 risk: "moderate",
                 rating: 4.8,
-                followers: 589,
+                investors: 589,
                 date: "2025-10-12",
                 returns: { "1m": 5.2, "3m": 18.7, "6m": 35.4, "1y": 68.9 },
                 longPositions: ["NVDA", "MSFT", "GOOGL", "META"],
@@ -280,7 +280,7 @@
                 type: "bullish",
                 risk: "moderate",
                 rating: 4.3,
-                followers: 234,
+                investors: 234,
                 date: "2025-10-08",
                 returns: { "1m": 3.8, "3m": 12.4, "6m": 28.6, "1y": 45.3 },
                 longPositions: ["NVDA", "AMD", "TSM", "ASML"],
@@ -294,7 +294,7 @@
                 type: "bullish",
                 risk: "low",
                 rating: 4.6,
-                followers: 445,
+                investors: 445,
                 date: "2025-10-11",
                 returns: { "1m": 2.1, "3m": 8.9, "6m": 19.2, "1y": 32.5 },
                 longPositions: ["MSFT", "GOOGL", "AMZN", "ORCL"],
@@ -308,7 +308,7 @@
                 type: "bearish",
                 risk: "high",
                 rating: 3.9,
-                followers: 156,
+                investors: 156,
                 date: "2025-10-09",
                 returns: { "1m": 1.2, "3m": 5.8, "6m": 12.3, "1y": 18.7 },
                 longPositions: [],
@@ -322,7 +322,7 @@
                 type: "bullish",
                 risk: "high",
                 rating: 4.1,
-                followers: 378,
+                investors: 378,
                 date: "2025-10-13",
                 returns: { "1m": 4.5, "3m": 15.2, "6m": 32.8, "1y": 55.6 },
                 longPositions: ["TSLA", "RIVN", "LCID", "NIO"],
@@ -330,15 +330,15 @@
             }
         ];
 
-        // Load followed strategies from localStorage
-        let followedStrategies = JSON.parse(localStorage.getItem('followedStrategies') || '[]');
+        // Load invested strategies from localStorage
+        let investedStrategies = JSON.parse(localStorage.getItem('investedStrategies') || '[]');
 
         function renderStrategies(strategiesToRender = strategies) {
             const container = document.getElementById('strategiesList');
             container.innerHTML = '';
 
             strategiesToRender.forEach(strategy => {
-                const isFollowing = followedStrategies.includes(strategy.id);
+                const isInvesting = investedStrategies.includes(strategy.id);
                 const strategyHTML = `
                     <div class="strategy-card" data-type="${strategy.type}" data-risk="${strategy.risk}">
                         <div class="author-info">
@@ -357,7 +357,7 @@
                                 <strong>${strategy.rating}</strong>
                             </span>
                             <span class="ms-3 text-muted">
-                                <i class="fas fa-users"></i> ${strategy.followers} followers
+                                <i class="fas fa-users"></i> ${strategy.investors} investors
                             </span>
                         </div>
 
@@ -404,9 +404,9 @@
                         </div>
 
                         <div class="mt-3">
-                            <button class="btn ${isFollowing ? 'btn-following' : 'btn-follow'}" onclick="toggleFollow(${strategy.id})">
-                                <i class="fas ${isFollowing ? 'fa-check' : 'fa-plus'}"></i>
-                                ${isFollowing ? 'Following' : 'Follow'}
+                            <button class="btn ${isInvesting ? 'btn-following' : 'btn-follow'}" onclick="toggleInvest(${strategy.id})">
+                                <i class="fas ${isInvesting ? 'fa-check' : 'fa-plus'}"></i>
+                                ${isInvesting ? 'Investing' : 'Invest'}
                             </button>
                             <button class="btn btn-outline-primary ms-2" onclick="viewTradeDetails(${strategy.id})">
                                 <i class="fas fa-eye"></i> View Details
@@ -418,18 +418,18 @@
             });
         }
 
-        function toggleFollow(strategyId) {
-            const index = followedStrategies.indexOf(strategyId);
+        function toggleInvest(strategyId) {
+            const index = investedStrategies.indexOf(strategyId);
             if (index > -1) {
-                followedStrategies.splice(index, 1);
+                investedStrategies.splice(index, 1);
                 const strategy = strategies.find(s => s.id === strategyId);
-                strategy.followers--;
+                strategy.investors--;
             } else {
-                followedStrategies.push(strategyId);
+                investedStrategies.push(strategyId);
                 const strategy = strategies.find(s => s.id === strategyId);
-                strategy.followers++;
+                strategy.investors++;
             }
-            localStorage.setItem('followedStrategies', JSON.stringify(followedStrategies));
+            localStorage.setItem('investedStrategies', JSON.stringify(investedStrategies));
             updateStats();
             renderStrategies(getFilteredStrategies());
         }
@@ -453,8 +453,8 @@
             // Sort
             if (sortBy === 'rating') {
                 filtered.sort((a, b) => b.rating - a.rating);
-            } else if (sortBy === 'followers') {
-                filtered.sort((a, b) => b.followers - a.followers);
+            } else if (sortBy === 'investors') {
+                filtered.sort((a, b) => b.investors - a.investors);
             } else if (sortBy === 'returns') {
                 filtered.sort((a, b) => b.returns['1y'] - a.returns['1y']);
             } else if (sortBy === 'recent') {
@@ -465,13 +465,13 @@
         }
 
         function updateStats() {
-            const totalFollowers = strategies.reduce((sum, s) => sum + s.followers, 0);
+            const totalInvesters = strategies.reduce((sum, s) => sum + s.investors, 0);
             const avgRating = (strategies.reduce((sum, s) => sum + s.rating, 0) / strategies.length).toFixed(1);
             
             document.getElementById('totalStrategies').textContent = strategies.length;
             document.getElementById('activeTraders').textContent = strategies.length;
             document.getElementById('avgRating').innerHTML = `${avgRating} <i class="fas fa-star stars"></i>`;
-            document.getElementById('totalFollowers').textContent = totalFollowers.toLocaleString();
+            document.getElementById('totalInvesters').textContent = totalInvesters.toLocaleString();
         }
 
         // Initialize
@@ -492,7 +492,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" id="modalFollowBtn">Follow Trade</button>
+                    <button type="button" class="btn btn-primary" id="modalInvestBtn">Invest in Trade</button>
                 </div>
             </div>
         </div>
@@ -509,25 +509,25 @@
                 <div class="modal-body">
                     <p>How much would you like to invest in this trade? (Optional)</p>
                     <div class="input-group mb-3">
-                        <select class="form-select" id="followCurrency" style="max-width: 100px;">
+                        <select class="form-select" id="investCurrency" style="max-width: 100px;">
                             <option value="USD">$</option>
                             <option value="EUR">€</option>
                         </select>
-                        <input type="number" class="form-control" id="followInvestmentAmount" 
+                        <input type="number" class="form-control" id="investAmount" 
                                placeholder="e.g., 10000" min="0" step="100">
                     </div>
                     <small class="text-muted">Leave empty to follow without specifying an amount</small>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="confirmFollow()">Confirm Follow</button>
+                    <button type="button" class="btn btn-primary" onclick="confirmInvest()">Confirm Invest</button>
                 </div>
             </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js">
-        let currentFollowStrategyId = null;
+        let currentInvestStrategyId = null;
 
         function viewTradeDetails(strategyId) {
             const strategy = strategies.find(s => s.id === strategyId);
@@ -589,22 +589,22 @@
                 </div>
 
                 <div class="mb-3">
-                    <h6>Followers</h6>
-                    <p>${strategy.followers} traders following this strategy</p>
+                    <h6>Investers</h6>
+                    <p>${strategy.investors} traders following this strategy</p>
                 </div>
             `;
 
             // Update follow button
-            const isFollowing = followedStrategies.includes(strategyId);
-            const followBtn = document.getElementById('modalFollowBtn');
-            followBtn.textContent = isFollowing ? 'Unfollow' : 'Follow Trade';
-            followBtn.className = isFollowing ? 'btn btn-secondary' : 'btn btn-primary';
+            const isInvesting = investedStrategies.includes(strategyId);
+            const followBtn = document.getElementById('modalInvestBtn');
+            followBtn.textContent = isInvesting ? 'Unfollow' : 'Invest in Trade';
+            followBtn.className = isInvesting ? 'btn btn-secondary' : 'btn btn-primary';
             followBtn.onclick = () => {
-                if (isFollowing) {
-                    toggleFollow(strategyId);
+                if (isInvesting) {
+                    toggleInvest(strategyId);
                     bootstrap.Modal.getInstance(document.getElementById('tradeDetailsModal')).hide();
                 } else {
-                    showInvestmentModal(strategyId);
+                    showInvestModal(strategyId);
                 }
             };
 
@@ -612,50 +612,50 @@
             new bootstrap.Modal(document.getElementById('tradeDetailsModal')).show();
         }
 
-        function showInvestmentModal(strategyId) {
-            currentFollowStrategyId = strategyId;
-            document.getElementById('followInvestmentAmount').value = '';
+        function showInvestModal(strategyId) {
+            currentInvestStrategyId = strategyId;
+            document.getElementById('investAmount').value = '';
             new bootstrap.Modal(document.getElementById('investmentModal')).show();
         }
 
-        function confirmFollow() {
-            if (currentFollowStrategyId === null) return;
+        function confirmInvest() {
+            if (currentInvestStrategyId === null) return;
 
-            const amount = document.getElementById('followInvestmentAmount').value;
-            const currency = document.getElementById('followCurrency').value;
+            const amount = document.getElementById('investAmount').value;
+            const currency = document.getElementById('investCurrency').value;
 
             // Save follow with investment amount
             const followData = {
-                strategyId: currentFollowStrategyId,
+                strategyId: currentInvestStrategyId,
                 amount: amount ? parseFloat(amount) : null,
                 currency: currency,
-                followedAt: new Date().toISOString()
+                investedAt: new Date().toISOString()
             };
 
             // Get existing follows
-            const follows = JSON.parse(localStorage.getItem('followedTrades') || '[]');
+            const follows = JSON.parse(localStorage.getItem('investedTrades') || '[]');
             follows.push(followData);
-            localStorage.setItem('followedTrades', JSON.stringify(follows));
+            localStorage.setItem('investedTrades', JSON.stringify(follows));
 
             // Toggle follow
-            toggleFollow(currentFollowStrategyId);
+            toggleInvest(currentInvestStrategyId);
 
             // Close modals
             bootstrap.Modal.getInstance(document.getElementById('investmentModal')).hide();
             const detailsModal = bootstrap.Modal.getInstance(document.getElementById('tradeDetailsModal'));
             if (detailsModal) detailsModal.hide();
 
-            currentFollowStrategyId = null;
+            currentInvestStrategyId = null;
         }
 
-        // Update the original toggleFollow to show investment modal
-        const originalToggleFollow = toggleFollow;
-        toggleFollow = function(strategyId) {
-            const isFollowing = followedStrategies.includes(strategyId);
-            if (!isFollowing) {
-                showInvestmentModal(strategyId);
+        // Update the original toggleInvest to show investment modal
+        const originalToggleInvest = toggleInvest;
+        toggleInvest = function(strategyId) {
+            const isInvesting = investedStrategies.includes(strategyId);
+            if (!isInvesting) {
+                showInvestModal(strategyId);
             } else {
-                originalToggleFollow(strategyId);
+                originalToggleInvest(strategyId);
             }
         };
 
