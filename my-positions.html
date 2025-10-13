@@ -189,6 +189,12 @@
             <i class="fas fa-chart-line"></i>
             <h3>No Positions Yet</h3>
             <p>Create or invest in trades to build your portfolio</p>
+        </div>
+    </div>
+
+    <script>
+        function aggregatePositions() {
+            // Get user's created trades
             const myTrades = JSON.parse(localStorage.getItem('myTrades') || '[]');
             
             // Get followed trades
