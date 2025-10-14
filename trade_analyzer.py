@@ -113,14 +113,10 @@ Please analyze this trade idea and recommend specific stocks, indices, and deriv
 2. **Position Types:** For derivatives, specify "long" or "short"
 3. **Allocations:** Must sum to approximately 100% across all positions
 4. **Tickers:** Use valid stock/ETF/index tickers (e.g., AAPL, SPY, QQQ, VIX, ^GSPC)
-5. **Respect User Intent:** If the user ONLY mentions long positions, return ONLY longs (shorts: []). If they ONLY mention shorts, return ONLY shorts (longs: []). Do NOT add positions the user didn't request.
+5. **Use Your Judgment:** You can add shorts, hedges, or derivatives if they improve the strategy, even if not explicitly mentioned by the user
 6. **Empty Arrays:** If no positions in a category, use empty array: []
 7. **Return Estimates:** Be realistic based on the strategy and market conditions
 8. **Rationale:** Each position should have clear reasoning tied to the trade thesis
-9. **Examples:**
-   - "Long AAPL, MSFT" → longs: [AAPL, MSFT], shorts: [], derivatives: []
-   - "Short TSLA" → longs: [], shorts: [TSLA], derivatives: []
-   - "Long NVDA, short IBM" → longs: [NVDA], shorts: [IBM], derivatives: []
 
 Provide your complete analysis in valid JSON format only, no additional text."""
 
