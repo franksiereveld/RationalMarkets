@@ -16,9 +16,12 @@ from flask_cors import CORS
 sys.path.append('/home/ubuntu/RationalMarkets')
 from trade_analyzer import analyze_trade_with_ai
 
-# Initialize Flask app
-app = Flask(__name__, static_folder='.', static_url_path='')
+# Initialize Flask app - serve static files from current directory
+app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
+
+# Get the directory where app.py is located
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # ============================================================================
 # API ENDPOINTS
@@ -76,29 +79,15 @@ def health():
 @app.route('/')
 def index():
     """Serve the main landing page"""
-    return send_file('index.html')
+    return send_from_directory(BASE_DIR, 'index.html')
 
-@app.route('/my-trades.html')
-def my_trades():
-    """Serve the My Trades page"""
-    return send_file('my-trades.html')
-
-@app.route('/ai-analysis.html')
-def ai_analysis():
-    """Serve the AI Analysis page"""
-    return send_file('ai-analysis.html')
-
-@app.route('/ai-strategy.html')
-def ai_strategy():
-    """Serve the AI Strategy demo page"""
-    return send_file('ai-strategy.html')
-
-@app.route('/<path:path>')
-def serve_static(path):
-    """Serve static files (CSS, JS, images, etc.)"""
-    if os.path.exists(path):
-        return send_file(path)
-    return "File not found", 404
+@app.route('/<path:filename>')
+def serve_file(filename):
+    """Serve any file from the root directory"""
+    try:
+        return send_from_directory(BASE_DIR, filename)
+    except:
+        return "File not found", 404
 
 # ============================================================================
 # MAIN
