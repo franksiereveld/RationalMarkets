@@ -1,6 +1,6 @@
 """
-Financial data module using Manus API Hub
-Provides reliable stock data without external dependencies
+Enhanced Financial data module using Manus API Hub
+Provides comprehensive stock data including insights, outlooks, and news
 """
 
 import sys
@@ -20,13 +20,13 @@ except ImportError:
 
 def get_stock_data(ticker):
     """
-    Get comprehensive stock data for a single ticker
+    Get comprehensive stock data for a single ticker including insights
     
     Args:
         ticker (str): Stock ticker symbol
         
     Returns:
-        dict: Stock data including price, financials, and chart data
+        dict: Stock data including price, financials, insights, and news
     """
     if not MANUS_API_AVAILABLE:
         return get_fallback_data(ticker)
@@ -34,19 +34,24 @@ def get_stock_data(ticker):
     try:
         client = ApiClient()
         
-        # Get stock chart data (includes price and historical data)
-        response = client.call_api('YahooFinance/get_stock_chart', query={
+        # Get stock chart data (price and historical data)
+        chart_response = client.call_api('YahooFinance/get_stock_chart', query={
             'symbol': ticker,
             'region': 'US',
             'interval': '1d',
-            'range': '6mo',  # 6 months of data for charts
+            'range': '6mo',
             'includeAdjustedClose': True
         })
         
-        if not response or 'chart' not in response or 'result' not in response['chart']:
+        # Get stock insights (outlooks, news, analyst reports)
+        insights_response = client.call_api('YahooFinance/get_stock_insights', query={
+            'symbol': ticker
+        })
+        
+        if not chart_response or 'chart' not in chart_response or 'result' not in chart_response['chart']:
             return get_fallback_data(ticker)
         
-        result = response['chart']['result'][0]
+        result = chart_response['chart']['result'][0]
         meta = result['meta']
         
         # Extract price data
@@ -68,6 +73,9 @@ def get_stock_data(ticker):
                     'price': round(quotes['close'][i], 2)
                 })
         
+        # Extract insights data
+        insights_data = extract_insights(insights_response, ticker)
+        
         # Build response (flattened structure for frontend compatibility)
         stock_data = {
             'ticker': ticker,
@@ -76,13 +84,19 @@ def get_stock_data(ticker):
             'marketCap': format_market_cap(meta.get('marketCap', meta.get('regularMarketCap', 0))),
             'sixMonthReturn': round(six_month_return, 2),
             'chartData': chart_data,
-            'pe': meta.get('trailingPE', None),
-            'ps': meta.get('priceToSalesTrailing12Months', None),
-            'pb': meta.get('priceToBook', None),
-            'evEbitda': meta.get('enterpriseToEbitda', None),
+            'pe': insights_data.get('pe'),
+            'ps': insights_data.get('ps'),
+            'pb': insights_data.get('pb'),
+            'evEbitda': insights_data.get('evEbitda'),
             'fiftyTwoWeekHigh': meta.get('fiftyTwoWeekHigh', None),
             'fiftyTwoWeekLow': meta.get('fiftyTwoWeekLow', None),
-            'volume': meta.get('regularMarketVolume', 0)
+            'volume': meta.get('regularMarketVolume', 0),
+            # Enhanced data from insights
+            'valuation': insights_data.get('valuation'),
+            'outlook': insights_data.get('outlook'),
+            'companyMetrics': insights_data.get('companyMetrics'),
+            'analystReport': insights_data.get('analystReport'),
+            'news': insights_data.get('news')
         }
         
         return stock_data
@@ -90,6 +104,100 @@ def get_stock_data(ticker):
     except Exception as e:
         print(f"Error fetching data for {ticker}: {str(e)}")
         return get_fallback_data(ticker)
+
+
+def extract_insights(insights_response, ticker):
+    """
+    Extract relevant insights from the Yahoo Finance insights API response
+    
+    Args:
+        insights_response (dict): Raw insights API response
+        ticker (str): Stock ticker symbol
+        
+    Returns:
+        dict: Extracted insights data
+    """
+    insights_data = {
+        'pe': None,
+        'ps': None,
+        'pb': None,
+        'evEbitda': None,
+        'valuation': None,
+        'outlook': None,
+        'companyMetrics': None,
+        'analystReport': None,
+        'news': None
+    }
+    
+    if not insights_response or 'finance' not in insights_response:
+        return insights_data
+    
+    try:
+        result = insights_response['finance'].get('result', {})
+        
+        # Extract valuation
+        instrument_info = result.get('instrumentInfo', {})
+        if 'valuation' in instrument_info:
+            val = instrument_info['valuation']
+            insights_data['valuation'] = {
+                'description': val.get('description', 'N/A'),
+                'discount': val.get('discount', 'N/A')
+            }
+        
+        # Extract technical outlooks
+        if 'technicalEvents' in instrument_info:
+            tech = instrument_info['technicalEvents']
+            outlooks = {}
+            
+            for term in ['shortTermOutlook', 'intermediateTermOutlook', 'longTermOutlook']:
+                if term in tech:
+                    outlook = tech[term]
+                    outlooks[term.replace('Outlook', '')] = {
+                        'direction': outlook.get('direction', 'N/A'),
+                        'score': outlook.get('score', 0),
+                        'description': outlook.get('scoreDescription', 'N/A')
+                    }
+            
+            if outlooks:
+                insights_data['outlook'] = outlooks
+        
+        # Extract company metrics
+        company_snapshot = result.get('companySnapshot', {})
+        if 'company' in company_snapshot:
+            company = company_snapshot['company']
+            insights_data['companyMetrics'] = {
+                'innovativeness': round(company.get('innovativeness', 0) * 100, 1),
+                'hiring': round(company.get('hiring', 0) * 100, 1),
+                'sustainability': round(company.get('sustainability', 0) * 100, 1),
+                'insiderSentiments': round(company.get('insiderSentiments', 0) * 100, 1),
+                'earningsReports': round(company.get('earningsReports', 0) * 100, 1)
+            }
+        
+        # Extract analyst report (most recent)
+        reports = result.get('reports', [])
+        if reports and len(reports) > 0:
+            report = reports[0]  # Most recent report
+            insights_data['analystReport'] = {
+                'provider': report.get('provider', 'N/A'),
+                'rating': report.get('investmentRating', 'N/A'),
+                'targetPrice': report.get('targetPrice'),
+                'date': report.get('reportDate', 'N/A')
+            }
+        
+        # Extract news/significant developments
+        sig_devs = result.get('sigDevs', [])
+        if sig_devs and len(sig_devs) > 0:
+            insights_data['news'] = []
+            for dev in sig_devs[:3]:  # Top 3 news items
+                insights_data['news'].append({
+                    'headline': dev.get('headline', 'N/A'),
+                    'date': dev.get('date', 'N/A')
+                })
+        
+    except Exception as e:
+        print(f"Error extracting insights for {ticker}: {str(e)}")
+    
+    return insights_data
 
 
 def get_multiple_stocks_data(tickers):
@@ -146,27 +254,47 @@ def get_fallback_data(ticker):
         'fiftyTwoWeekHigh': None,
         'fiftyTwoWeekLow': None,
         'volume': 0,
+        'valuation': None,
+        'outlook': None,
+        'companyMetrics': None,
+        'analystReport': None,
+        'news': None,
         'error': 'Data temporarily unavailable'
     }
 
 
 # Test function
 if __name__ == "__main__":
-    print("Testing financial data module...")
+    print("Testing enhanced financial data module...")
     
     # Test single stock
-    print("\nTesting single stock (AAPL):")
-    aapl_data = get_stock_data("AAPL")
-    print(f"Ticker: {aapl_data['ticker']}")
-    print(f"Name: {aapl_data['name']}")
-    print(f"Current Price: ${aapl_data['currentPrice']}")
-    print(f"Market Cap: {aapl_data['financialData']['marketCap']}")
-    print(f"6M Return: {aapl_data['sixMonthReturn']}%")
-    print(f"Chart data points: {len(aapl_data['chartData'])}")
+    print("\nTesting DELL:")
+    dell_data = get_stock_data("DELL")
+    print(f"Ticker: {dell_data['ticker']}")
+    print(f"Name: {dell_data['name']}")
+    print(f"Current Price: ${dell_data['currentPrice']}")
+    print(f"Market Cap: {dell_data['marketCap']}")
+    print(f"6M Return: {dell_data['sixMonthReturn']}%")
     
-    # Test multiple stocks
-    print("\nTesting multiple stocks:")
-    tickers = ["MSFT", "GOOGL", "NVDA"]
-    multi_data = get_multiple_stocks_data(tickers)
-    for ticker, data in multi_data.items():
-        print(f"{ticker}: ${data['currentPrice']} ({data['sixMonthReturn']}% 6M return)")
+    if dell_data.get('valuation'):
+        print(f"\nValuation: {dell_data['valuation']['description']} ({dell_data['valuation']['discount']} discount)")
+    
+    if dell_data.get('outlook'):
+        print(f"\nOutlooks:")
+        for term, outlook in dell_data['outlook'].items():
+            print(f"  {term}: {outlook['direction']} - {outlook['description']}")
+    
+    if dell_data.get('analystReport'):
+        report = dell_data['analystReport']
+        print(f"\nAnalyst Report:")
+        print(f"  Rating: {report['rating']}")
+        print(f"  Target Price: ${report['targetPrice']}")
+        print(f"  Provider: {report['provider']}")
+    
+    if dell_data.get('news'):
+        print(f"\nRecent News:")
+        for item in dell_data['news']:
+            print(f"  - {item['headline']} ({item['date']})")
+    
+    print(f"\nChart data points: {len(dell_data['chartData'])}")
+
