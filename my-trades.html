@@ -654,7 +654,8 @@
             
             // Draw price line
             ctx.beginPath();
-            ctx.strokeStyle = financialData.sixMonthReturn >= 0 ? '#28a745' : '#dc3545';
+            const sixMonthReturn = financialData.sixMonthReturn || 0;
+            ctx.strokeStyle = sixMonthReturn >= 0 ? '#28a745' : '#dc3545';
             ctx.lineWidth = 3;
             
             chartData.forEach((point, index) => {
@@ -674,7 +675,7 @@
             ctx.lineTo(marginLeft + chartWidth, marginTop + chartHeight);
             ctx.lineTo(marginLeft, marginTop + chartHeight);
             ctx.closePath();
-            ctx.fillStyle = financialData.sixMonthReturn >= 0 ? 'rgba(40, 167, 69, 0.15)' : 'rgba(220, 53, 69, 0.15)';
+            ctx.fillStyle = sixMonthReturn >= 0 ? 'rgba(40, 167, 69, 0.15)' : 'rgba(220, 53, 69, 0.15)';
             ctx.fill();
         }
 
