@@ -449,7 +449,7 @@
                     <!-- Stock Chart -->
                     <div class="mb-3">
                         <div class="chart-container" style="height: 350px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; position: relative; overflow: hidden;">
-                            <canvas id="chart-${position.symbol}" width="100%" height="200"></canvas>
+                            <canvas id="chart-${position.symbol}" style="width: 100%; height: 350px;"></canvas>
                             <div style="position: absolute; top: 10px; left: 15px;">
                                 <small class="text-muted">6M Price Chart</small>
                             </div>
@@ -522,7 +522,7 @@
             if (!canvas) return;
             
             const ctx = canvas.getContext('2d');
-            const width = canvas.offsetWidth;
+            const width = canvas.parentElement.offsetWidth;
             const height = 350;
             canvas.width = width;
             canvas.height = height;
@@ -643,7 +643,7 @@
             if (!canvas) return;
             
             const ctx = canvas.getContext('2d');
-            const width = canvas.offsetWidth;
+            const width = canvas.parentElement.offsetWidth;
             const height = 350;
             canvas.width = width;
             canvas.height = height;
