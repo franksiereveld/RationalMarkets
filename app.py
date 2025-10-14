@@ -307,6 +307,42 @@ def delete_trade(trade_id):
         }), 500
 
 
+@app.route('/api/user/stats', methods=['GET'])
+@require_auth
+def get_user_stats():
+    """Get user statistics"""
+    try:
+        with DatabaseSession() as session:
+            # Count total trades
+            total_trades = session.query(Trade).filter_by(
+                user_id=request.user['id']
+            ).count()
+            
+            # Count saved trades (all trades are saved)
+            saved_trades = total_trades
+            
+            # Count active positions
+            active_positions = session.query(Position).join(Trade).filter(
+                Trade.user_id == request.user['id']
+            ).count()
+        
+        return jsonify({
+            'success': True,
+            'stats': {
+                'total_trades': total_trades,
+                'saved_trades': saved_trades,
+                'active_positions': active_positions
+            }
+        }), 200
+    
+    except Exception as e:
+        print(f"Error getting user stats: {e}")
+        return jsonify({
+            'success': False,
+            'message': 'Failed to fetch stats'
+        }), 500
+
+
 # ============================================================================
 # HEALTH CHECK
 # ============================================================================
@@ -373,6 +409,33 @@ def auth_page():
         return send_file(file_path)
     except Exception as e:
         return f"Error loading auth.html: {str(e)}", 500
+
+@app.route('/profile.html')
+def profile_page():
+    """Serve the profile page"""
+    try:
+        file_path = os.path.join(os.path.dirname(__file__), 'profile.html')
+        return send_file(file_path)
+    except Exception as e:
+        return f"Error loading profile.html: {str(e)}", 500
+
+@app.route('/saved-trades.html')
+def saved_trades_page():
+    """Serve the saved trades page"""
+    try:
+        file_path = os.path.join(os.path.dirname(__file__), 'saved-trades.html')
+        return send_file(file_path)
+    except Exception as e:
+        return f"Error loading saved-trades.html: {str(e)}", 500
+
+@app.route('/auth-check.js')
+def auth_check_js():
+    """Serve the auth check JavaScript"""
+    try:
+        file_path = os.path.join(os.path.dirname(__file__), 'auth-check.js')
+        return send_file(file_path, mimetype='application/javascript')
+    except Exception as e:
+        return f"Error loading auth-check.js: {str(e)}", 500
 
 # Serve static files
 @app.route('/static/<path:path>')

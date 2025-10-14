@@ -176,22 +176,21 @@ class Trade(Base):
     def to_dict(self, include_positions=True):
         result = {
             'id': str(self.id),
-            'userId': str(self.user_id),
-            'tradeName': self.trade_name,
-            'tradeDescription': self.trade_description,
+            'user_id': str(self.user_id),
+            'trade_name': self.trade_name,
+            'trade_description': self.trade_description,
             'status': self.status,
-            'aiRationale': self.ai_rationale,
+            'ai_rationale': self.ai_rationale,
             'recommendation': self.recommendation,
-            'riskLevel': self.risk_level,
-            'returnEstimates': {
-                '1M': str(self.return_1m) if self.return_1m else None,
-                '3M': str(self.return_3m) if self.return_3m else None,
-                '6M': str(self.return_6m) if self.return_6m else None,
-                '1Y': str(self.return_1y) if self.return_1y else None,
-                '3Y': str(self.return_3y) if self.return_3y else None
-            },
-            'createdAt': self.created_at.isoformat() if self.created_at else None,
-            'updatedAt': self.updated_at.isoformat() if self.updated_at else None
+            'risk_level': self.risk_level,
+            'return_1m': float(self.return_1m) if self.return_1m else None,
+            'return_3m': float(self.return_3m) if self.return_3m else None,
+            'return_6m': float(self.return_6m) if self.return_6m else None,
+            'return_1y': float(self.return_1y) if self.return_1y else None,
+            'return_3y': float(self.return_3y) if self.return_3y else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'analyzed_at': self.analyzed_at.isoformat() if self.analyzed_at else None
         }
         
         if include_positions:
@@ -251,11 +250,11 @@ class Position(Base):
     def to_dict(self):
         return {
             'id': str(self.id),
-            'tradeId': str(self.trade_id),
+            'trade_id': str(self.trade_id),
             'ticker': self.security.ticker if self.security else None,
             'name': self.security.name if self.security else None,
-            'positionType': self.position_type,
-            'securityType': self.security_type,
+            'position_type': self.position_type,
+            'security_type': self.security_type,
             'allocation': str(self.allocation_percent) + '%',
             'rationale': self.rationale,
             'quantity': float(self.quantity) if self.quantity else None,

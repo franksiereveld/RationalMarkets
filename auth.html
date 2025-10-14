@@ -91,12 +91,12 @@
             margin-bottom: 10px;
         }
 
-        button:hover {
+        button:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
         }
 
-        button:active {
+        button:active:not(:disabled) {
             transform: translateY(0);
         }
 
@@ -105,7 +105,7 @@
             color: #667eea;
         }
 
-        button.secondary:hover {
+        button.secondary:hover:not(:disabled) {
             background: #e0e0e0;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
@@ -155,6 +155,7 @@
             border-top-color: transparent;
             animation: spin 0.8s linear infinite;
             margin-right: 8px;
+            vertical-align: middle;
         }
 
         @keyframes spin {
@@ -175,6 +176,10 @@
         .back-link a:hover {
             text-decoration: underline;
         }
+
+        .hidden {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
@@ -182,6 +187,8 @@
         <div class="auth-card">
             <h1>🔐 Login</h1>
             <p class="subtitle">RationalMarkets AI Trade Analysis</p>
+            
+            <div id="messageBox"></div>
             
             <!-- Step 1: Enter Phone Number -->
             <div id="phoneStep" class="auth-step">
@@ -198,7 +205,7 @@
             </div>
             
             <!-- Step 2: Enter Verification Code -->
-            <div id="codeStep" class="auth-step" style="display: none;">
+            <div id="codeStep" class="auth-step hidden">
                 <p>Enter the 6-digit code sent to <span id="phoneDisplay" class="phone-display"></span></p>
                 <input 
                     type="text" 
@@ -218,16 +225,233 @@
                     Change Number
                 </button>
             </div>
-            
-            <div id="messageBox" style="display: none;"></div>
         </div>
         
         <div class="back-link">
-            <a href="index.html">← Back to Home</a>
+            <a href="/">← Back to Home</a>
         </div>
     </div>
     
-    <script src="auth.js"></script>
+    <script>
+        // API Configuration
+        const API_BASE_URL = window.location.origin;
+        
+        // State
+        let currentPhoneNumber = '';
+        
+        // Show message
+        function showMessage(message, type = 'info') {
+            const messageBox = document.getElementById('messageBox');
+            messageBox.className = type;
+            messageBox.textContent = message;
+            messageBox.style.display = 'block';
+            
+            // Auto-hide success messages after 3 seconds
+            if (type === 'success') {
+                setTimeout(() => {
+                    messageBox.style.display = 'none';
+                }, 3000);
+            }
+        }
+        
+        // Hide message
+        function hideMessage() {
+            document.getElementById('messageBox').style.display = 'none';
+        }
+        
+        // Normalize phone number
+        function normalizePhoneNumber(phone) {
+            // Remove all non-digit characters
+            let digits = phone.replace(/\D/g, '');
+            
+            // Add country code if not present (assume US +1)
+            if (digits.length === 10) {
+                digits = '1' + digits;
+            }
+            
+            return '+' + digits;
+        }
+        
+        // Send verification code
+        async function sendVerificationCode() {
+            const phoneInput = document.getElementById('phoneNumber');
+            const sendBtn = document.getElementById('sendCodeBtn');
+            const phoneNumber = phoneInput.value.trim();
+            
+            if (!phoneNumber) {
+                showMessage('Please enter your phone number', 'error');
+                return;
+            }
+            
+            // Normalize phone number
+            currentPhoneNumber = normalizePhoneNumber(phoneNumber);
+            
+            // Disable button and show loading
+            sendBtn.disabled = true;
+            sendBtn.innerHTML = '<span class="loading"></span>Sending...';
+            hideMessage();
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/auth/request-code`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        phoneNumber: currentPhoneNumber
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Show code step
+                    document.getElementById('phoneStep').classList.add('hidden');
+                    document.getElementById('codeStep').classList.remove('hidden');
+                    document.getElementById('phoneDisplay').textContent = currentPhoneNumber;
+                    showMessage('Verification code sent! Check your phone.', 'success');
+                    
+                    // Focus on code input
+                    document.getElementById('verificationCode').focus();
+                } else {
+                    showMessage(data.message || 'Failed to send code. Please try again.', 'error');
+                }
+            } catch (error) {
+                console.error('Error sending code:', error);
+                showMessage('Network error. Please check your connection and try again.', 'error');
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.innerHTML = 'Send Code';
+            }
+        }
+        
+        // Verify code
+        async function verifyCode() {
+            const codeInput = document.getElementById('verificationCode');
+            const verifyBtn = document.getElementById('verifyBtn');
+            const code = codeInput.value.trim();
+            
+            if (!code || code.length !== 6) {
+                showMessage('Please enter the 6-digit code', 'error');
+                return;
+            }
+            
+            // Disable button and show loading
+            verifyBtn.disabled = true;
+            verifyBtn.innerHTML = '<span class="loading"></span>Verifying...';
+            hideMessage();
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/auth/verify-code`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        phoneNumber: currentPhoneNumber,
+                        code: code
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Store JWT token
+                    localStorage.setItem('authToken', data.token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    
+                    showMessage('Login successful! Redirecting...', 'success');
+                    
+                    // Redirect to my-trades page after 1 second
+                    setTimeout(() => {
+                        window.location.href = '/my-trades.html';
+                    }, 1000);
+                } else {
+                    showMessage(data.message || 'Invalid code. Please try again.', 'error');
+                    codeInput.value = '';
+                    codeInput.focus();
+                }
+            } catch (error) {
+                console.error('Error verifying code:', error);
+                showMessage('Network error. Please check your connection and try again.', 'error');
+            } finally {
+                verifyBtn.disabled = false;
+                verifyBtn.innerHTML = 'Verify Code';
+            }
+        }
+        
+        // Resend code
+        async function resendCode() {
+            await sendVerificationCode();
+        }
+        
+        // Change number
+        function changeNumber() {
+            document.getElementById('codeStep').classList.add('hidden');
+            document.getElementById('phoneStep').classList.remove('hidden');
+            document.getElementById('verificationCode').value = '';
+            hideMessage();
+        }
+        
+        // Handle Enter key
+        document.getElementById('phoneNumber').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendVerificationCode();
+            }
+        });
+        
+        document.getElementById('verificationCode').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                verifyCode();
+            }
+        });
+        
+        // Auto-format phone number input
+        document.getElementById('phoneNumber').addEventListener('input', (e) => {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 0) {
+                if (value.length <= 3) {
+                    e.target.value = value;
+                } else if (value.length <= 6) {
+                    e.target.value = value.slice(0, 3) + ' ' + value.slice(3);
+                } else if (value.length <= 10) {
+                    e.target.value = value.slice(0, 3) + ' ' + value.slice(3, 6) + ' ' + value.slice(6);
+                } else {
+                    e.target.value = '+' + value.slice(0, 1) + ' ' + value.slice(1, 4) + ' ' + value.slice(4, 7) + ' ' + value.slice(7, 11);
+                }
+            }
+        });
+        
+        // Only allow digits in verification code
+        document.getElementById('verificationCode').addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/\D/g, '');
+        });
+        
+        // Check if already logged in
+        window.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('authToken');
+            if (token) {
+                // Verify token is still valid
+                fetch(`${API_BASE_URL}/api/auth/me`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Already logged in, redirect
+                        window.location.href = '/my-trades.html';
+                    }
+                })
+                .catch(() => {
+                    // Token invalid, clear it
+                    localStorage.removeItem('authToken');
+                    localStorage.removeItem('user');
+                });
+            }
+        });
+    </script>
 </body>
 </html>
 
