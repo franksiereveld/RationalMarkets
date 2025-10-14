@@ -14,8 +14,11 @@ twilio==8.10.0
 # AI and data
 openai==1.54.0
 httpx==0.27.0
-requests==2.31.0
+requests==2.31.0  # Used by FMP API
 beautifulsoup4==4.12.2
+yfinance==0.2.48
+pandas==2.1.4
+requests-cache==1.1.1
 
 # Production server
 gunicorn==21.2.0

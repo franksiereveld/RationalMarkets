@@ -10,7 +10,20 @@ import json
 from openai import OpenAI
 from datetime import datetime
 sys.path.append('/home/ubuntu/RationalMarkets')
-from financial_data import get_stock_data
+
+# Use Financial Modeling Prep (FMP) for production
+try:
+    from financial_data_fmp import get_stock_data
+    print("Using Financial Modeling Prep (FMP) API for market data")
+except ImportError:
+    # Fallback to yfinance if FMP not available
+    try:
+        from financial_data_production import get_stock_data
+        print("Using yfinance for market data")
+    except ImportError:
+        # Last resort: sandbox version
+        from financial_data import get_stock_data
+        print("Using sandbox financial data module (Manus API Hub)")
 
 # Initialize OpenAI client (API key already in environment)
 client = OpenAI()
