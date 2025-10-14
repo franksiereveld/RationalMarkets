@@ -218,7 +218,7 @@
             </div>
 
 <!-- Long Positions -->
-            <div class="card">
+            <div id="longPositionsCard" class="card">
                 <div class="card-header">
                     <h4 class="mb-0"><i class="fas fa-arrow-up me-2 text-success"></i>Long Positions</h4>
                 </div>
@@ -228,7 +228,7 @@
             </div>
 
             <!-- Short Positions -->
-            <div class="card">
+            <div id="shortPositionsCard" class="card">
                 <div class="card-header">
                     <h4 class="mb-0"><i class="fas fa-arrow-down me-2 text-danger"></i>Short Positions</h4>
                 </div>
@@ -407,11 +407,23 @@
                 returnGrid.appendChild(card);
             });
 
-            // Long positions
-            displayPositionsWithCharts(analysis.longPositions, 'longPositions', true);
-
-            // Short positions
-            displayPositionsWithCharts(analysis.shortPositions, 'shortPositions', false);
+            // Show/hide position sections based on whether they have data
+            const longCard = document.getElementById("longPositionsCard");
+            const shortCard = document.getElementById("shortPositionsCard");
+            
+            if (analysis.longPositions && analysis.longPositions.length > 0) {
+                longCard.style.display = "block";
+                displayPositionsWithCharts(analysis.longPositions, 'longPositions', true);
+            } else {
+                longCard.style.display = "none";
+            }
+            
+            if (analysis.shortPositions && analysis.shortPositions.length > 0) {
+                shortCard.style.display = "block";
+                displayPositionsWithCharts(analysis.shortPositions, 'shortPositions', false);
+            } else {
+                shortCard.style.display = "none";
+            }
 
             // AI rationale
             document.getElementById('aiRationale').textContent = analysis.aiRationale;
