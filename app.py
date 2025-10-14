@@ -9,19 +9,16 @@ import json
 import os
 import sys
 from datetime import datetime
-from flask import Flask, request, jsonify, send_from_directory, send_file
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 
 # Add current directory to path
-sys.path.append('/home/ubuntu/RationalMarkets')
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from trade_analyzer import analyze_trade_with_ai
 
-# Initialize Flask app - serve static files from current directory
+# Initialize Flask app
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
-
-# Get the directory where app.py is located
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # ============================================================================
 # API ENDPOINTS
@@ -73,21 +70,68 @@ def health():
     return jsonify({'status': 'healthy', 'service': 'RationalMarkets API'}), 200
 
 # ============================================================================
-# FRONTEND ROUTES
+# FRONTEND ROUTES - Serve HTML files
 # ============================================================================
 
 @app.route('/')
 def index():
     """Serve the main landing page"""
-    return send_from_directory(BASE_DIR, 'index.html')
-
-@app.route('/<path:filename>')
-def serve_file(filename):
-    """Serve any file from the root directory"""
     try:
-        return send_from_directory(BASE_DIR, filename)
-    except:
+        file_path = os.path.join(os.path.dirname(__file__), 'index.html')
+        return send_file(file_path)
+    except Exception as e:
+        return f"Error loading index.html: {str(e)}", 500
+
+@app.route('/my-trades.html')
+def my_trades():
+    """Serve the My Trades page"""
+    try:
+        file_path = os.path.join(os.path.dirname(__file__), 'my-trades.html')
+        return send_file(file_path)
+    except Exception as e:
+        return f"Error loading my-trades.html: {str(e)}", 500
+
+@app.route('/ai-analysis.html')
+def ai_analysis():
+    """Serve the AI Analysis page"""
+    try:
+        file_path = os.path.join(os.path.dirname(__file__), 'ai-analysis.html')
+        return send_file(file_path)
+    except Exception as e:
+        return f"Error loading ai-analysis.html: {str(e)}", 500
+
+@app.route('/ai-strategy.html')
+def ai_strategy():
+    """Serve the AI Strategy demo page"""
+    try:
+        file_path = os.path.join(os.path.dirname(__file__), 'ai-strategy.html')
+        return send_file(file_path)
+    except Exception as e:
+        return f"Error loading ai-strategy.html: {str(e)}", 500
+
+# Serve any other HTML file
+@app.route('/<filename>.html')
+def serve_html(filename):
+    """Serve any HTML file"""
+    try:
+        file_path = os.path.join(os.path.dirname(__file__), f'{filename}.html')
+        if os.path.exists(file_path):
+            return send_file(file_path)
         return "File not found", 404
+    except Exception as e:
+        return f"Error: {str(e)}", 500
+
+# Serve CSS, JS, images, etc.
+@app.route('/<path:filepath>')
+def serve_static(filepath):
+    """Serve static files (CSS, JS, images, etc.)"""
+    try:
+        file_path = os.path.join(os.path.dirname(__file__), filepath)
+        if os.path.exists(file_path) and os.path.isfile(file_path):
+            return send_file(file_path)
+        return "File not found", 404
+    except Exception as e:
+        return f"Error: {str(e)}", 500
 
 # ============================================================================
 # MAIN
@@ -107,6 +151,10 @@ if __name__ == '__main__':
     print(f"\nAPI Endpoints:")
     print(f"  POST /api/analyze-trade - AI trade analysis with real market data")
     print(f"  GET  /health - Health check")
+    print(f"{'='*80}")
+    print(f"Working directory: {os.getcwd()}")
+    print(f"App directory: {os.path.dirname(__file__)}")
+    print(f"Files in directory: {os.listdir(os.path.dirname(__file__) or '.')[:10]}")
     print(f"{'='*80}")
     print(f"Press Ctrl+C to stop")
     print(f"{'='*80}\n")
