@@ -1,233 +1,409 @@
 """
-Database models for RationalMarkets platform
-Uses SQLAlchemy ORM for database operations
+SQLAlchemy Database Models for RationalMarkets
+Implements user authentication, trades, portfolios, and securities tracking
 """
 
 from datetime import datetime
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.dialects.postgresql import JSON
+from sqlalchemy import (
+    Column, String, Integer, BigInteger, Numeric, Boolean, DateTime, Text,
+    ForeignKey, Index, CheckConstraint, UniqueConstraint, Date
+)
+from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import JSON
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship
+import uuid
 
-db = SQLAlchemy()
+Base = declarative_base()
 
 
-class User(db.Model):
-    """User model for authentication and profile"""
+class User(Base):
+    """User accounts with phone-based authentication"""
     __tablename__ = 'users'
     
-    id = db.Column(db.Integer, primary_key=True)
-    phone_number = db.Column(db.String(20), unique=True, nullable=False, index=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    last_login = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    phone_number = Column(String(20), unique=True, nullable=False, index=True)
+    email = Column(String(255), unique=True, index=True)
+    full_name = Column(String(255))
+    
+    # Authentication
+    is_active = Column(Boolean, default=True)
+    is_verified = Column(Boolean, default=False)
+    verification_code = Column(String(10))
+    verification_expires_at = Column(DateTime)
+    
+    # Preferences
+    preferences = Column(JSON, default={})
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    last_login = Column(DateTime)
     
     # Relationships
-    trades = db.relationship('Trade', backref='user', lazy='dynamic', cascade='all, delete-orphan')
+    trades = relationship("Trade", back_populates="user", cascade="all, delete-orphan")
+    portfolios = relationship("Portfolio", back_populates="user", cascade="all, delete-orphan")
+    broker_connections = relationship("BrokerConnection", back_populates="user", cascade="all, delete-orphan")
     
     def __repr__(self):
-        return f'<User {self.phone_number}>'
+        return f"<User {self.phone_number}>"
     
     def to_dict(self):
-        """Convert user to dictionary"""
         return {
-            'id': self.id,
+            'id': str(self.id),
             'phoneNumber': self.phone_number,
-            'createdAt': self.created_at.isoformat(),
-            'lastLogin': self.last_login.isoformat(),
-            'isActive': self.is_active
+            'email': self.email,
+            'fullName': self.full_name,
+            'isVerified': self.is_verified,
+            'createdAt': self.created_at.isoformat() if self.created_at else None,
+            'lastLogin': self.last_login.isoformat() if self.last_login else None
         }
 
 
-class Trade(db.Model):
-    """Trade analysis model"""
-    __tablename__ = 'trades'
+class Security(Base):
+    """Master table for all tradeable securities"""
+    __tablename__ = 'securities'
     
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    ticker = Column(String(50), nullable=False, index=True)
+    name = Column(String(255), nullable=False)
+    security_type = Column(String(50), nullable=False, index=True)
     
-    # Trade details
-    name = db.Column(db.String(200), nullable=False)
-    description = db.Column(db.Text)
-    recommendation = db.Column(db.String(50))  # RECOMMENDED, NEUTRAL, NOT_RECOMMENDED
-    risk_level = db.Column(db.String(50))  # LOW, MODERATE, HIGH
+    # Identifiers
+    exchange = Column(String(50))
+    currency = Column(String(10), default='USD')
+    country = Column(String(50))
     
-    # AI Analysis
-    analysis_text = db.Column(db.Text)
+    # Classification
+    sector = Column(String(100), index=True)
+    industry = Column(String(100))
+    description = Column(Text)
+    
+    # Market data (cached)
+    current_price = Column(Numeric(20, 6))
+    market_cap = Column(BigInteger)
+    volume = Column(BigInteger)
+    avg_volume = Column(BigInteger)
+    
+    # Fundamental data
+    pe_ratio = Column(Numeric(10, 2))
+    ps_ratio = Column(Numeric(10, 2))
+    pb_ratio = Column(Numeric(10, 2))
+    ev_ebitda = Column(Numeric(10, 2))
+    dividend_yield = Column(Numeric(10, 4))
+    
+    # Price ranges
+    fifty_two_week_high = Column(Numeric(20, 6))
+    fifty_two_week_low = Column(Numeric(20, 6))
+    
+    # Metadata
+    is_active = Column(Boolean, default=True)
+    last_updated = Column(DateTime, default=datetime.utcnow)
+    data_source = Column(String(50))
     
     # Timestamps
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
-    long_positions = db.relationship('Position', 
-                                    foreign_keys='Position.trade_id',
-                                    primaryjoin="and_(Trade.id==Position.trade_id, Position.position_type=='long')",
-                                    lazy='dynamic',
-                                    cascade='all, delete-orphan')
+    positions = relationship("Position", back_populates="security")
+    portfolio_holdings = relationship("PortfolioHolding", back_populates="security")
+    price_history = relationship("PriceHistory", back_populates="security", cascade="all, delete-orphan")
     
-    short_positions = db.relationship('Position',
-                                     foreign_keys='Position.trade_id', 
-                                     primaryjoin="and_(Trade.id==Position.trade_id, Position.position_type=='short')",
-                                     lazy='dynamic',
-                                     cascade='all, delete-orphan')
+    __table_args__ = (
+        UniqueConstraint('ticker', 'exchange', name='uq_ticker_exchange'),
+    )
     
     def __repr__(self):
-        return f'<Trade {self.name}>'
+        return f"<Security {self.ticker}>"
+    
+    def to_dict(self):
+        return {
+            'id': str(self.id),
+            'ticker': self.ticker,
+            'name': self.name,
+            'securityType': self.security_type,
+            'exchange': self.exchange,
+            'currency': self.currency,
+            'sector': self.sector,
+            'industry': self.industry,
+            'currentPrice': float(self.current_price) if self.current_price else None,
+            'marketCap': self.market_cap,
+            'peRatio': float(self.pe_ratio) if self.pe_ratio else None,
+            'psRatio': float(self.ps_ratio) if self.ps_ratio else None,
+            'pbRatio': float(self.pb_ratio) if self.pb_ratio else None
+        }
+
+
+class Trade(Base):
+    """AI-generated trade strategies and recommendations"""
+    __tablename__ = 'trades'
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    
+    # Trade metadata
+    trade_name = Column(String(255), nullable=False)
+    trade_description = Column(Text, nullable=False)
+    status = Column(String(50), default='draft', index=True)
+    
+    # AI analysis
+    ai_rationale = Column(Text)
+    recommendation = Column(String(50))
+    risk_level = Column(String(50))
+    
+    # Return estimates
+    return_1m = Column(Numeric(10, 4))
+    return_3m = Column(Numeric(10, 4))
+    return_6m = Column(Numeric(10, 4))
+    return_1y = Column(Numeric(10, 4))
+    return_3y = Column(Numeric(10, 4))
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    analyzed_at = Column(DateTime)
+    activated_at = Column(DateTime)
+    closed_at = Column(DateTime)
+    
+    # Relationships
+    user = relationship("User", back_populates="trades")
+    positions = relationship("Position", back_populates="trade", cascade="all, delete-orphan")
+    
+    def __repr__(self):
+        return f"<Trade {self.trade_name}>"
     
     def to_dict(self, include_positions=True):
-        """Convert trade to dictionary"""
         result = {
-            'id': self.id,
-            'userId': self.user_id,
-            'name': self.name,
-            'description': self.description,
+            'id': str(self.id),
+            'userId': str(self.user_id),
+            'tradeName': self.trade_name,
+            'tradeDescription': self.trade_description,
+            'status': self.status,
+            'aiRationale': self.ai_rationale,
             'recommendation': self.recommendation,
             'riskLevel': self.risk_level,
-            'analysisText': self.analysis_text,
-            'createdAt': self.created_at.isoformat(),
-            'updatedAt': self.updated_at.isoformat()
+            'returnEstimates': {
+                '1M': str(self.return_1m) if self.return_1m else None,
+                '3M': str(self.return_3m) if self.return_3m else None,
+                '6M': str(self.return_6m) if self.return_6m else None,
+                '1Y': str(self.return_1y) if self.return_1y else None,
+                '3Y': str(self.return_3y) if self.return_3y else None
+            },
+            'createdAt': self.created_at.isoformat() if self.created_at else None,
+            'updatedAt': self.updated_at.isoformat() if self.updated_at else None
         }
         
         if include_positions:
-            result['longPositions'] = [pos.to_dict() for pos in self.long_positions.all()]
-            result['shortPositions'] = [pos.to_dict() for pos in self.short_positions.all()]
+            longs = [p.to_dict() for p in self.positions if p.position_type == 'long']
+            shorts = [p.to_dict() for p in self.positions if p.position_type == 'short']
+            derivatives = [p.to_dict() for p in self.positions if p.security_type in ['option', 'future']]
+            result['longs'] = longs
+            result['shorts'] = shorts
+            result['derivatives'] = derivatives
         
         return result
 
 
-class Position(db.Model):
-    """Stock position model (long or short)"""
+class Position(Base):
+    """Individual positions within a trade"""
     __tablename__ = 'positions'
     
-    id = db.Column(db.Integer, primary_key=True)
-    trade_id = db.Column(db.Integer, db.ForeignKey('trades.id'), nullable=False, index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    trade_id = Column(UUID(as_uuid=True), ForeignKey('trades.id', ondelete='CASCADE'), nullable=False, index=True)
+    security_id = Column(UUID(as_uuid=True), ForeignKey('securities.id'), nullable=False, index=True)
     
     # Position details
-    ticker = db.Column(db.String(10), nullable=False, index=True)
-    company_name = db.Column(db.String(200))
-    position_type = db.Column(db.String(10), nullable=False)  # 'long' or 'short'
-    allocation_percentage = db.Column(db.Float)  # 0-100
+    position_type = Column(String(50), nullable=False, index=True)
+    security_type = Column(String(50), nullable=False)
+    allocation_percent = Column(Numeric(5, 2), nullable=False)
     
-    # Rationale
-    rationale = db.Column(db.Text)
+    # AI rationale
+    rationale = Column(Text)
     
-    # Financial data (stored as JSON for flexibility)
-    financial_data = db.Column(JSON)
+    # Execution details
+    quantity = Column(Numeric(20, 6))
+    entry_price = Column(Numeric(20, 6))
+    current_price = Column(Numeric(20, 6))
+    market_value = Column(Numeric(20, 2))
+    unrealized_pnl = Column(Numeric(20, 2))
+    
+    # Status
+    status = Column(String(50), default='recommended')
     
     # Timestamps
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    opened_at = Column(DateTime)
+    closed_at = Column(DateTime)
+    
+    # Relationships
+    trade = relationship("Trade", back_populates="positions")
+    security = relationship("Security", back_populates="positions")
+    
+    __table_args__ = (
+        CheckConstraint('allocation_percent > 0 AND allocation_percent <= 100', name='valid_allocation'),
+    )
     
     def __repr__(self):
-        return f'<Position {self.ticker} ({self.position_type})>'
+        return f"<Position {self.position_type} {self.security.ticker if self.security else 'N/A'}>"
     
     def to_dict(self):
-        """Convert position to dictionary"""
         return {
-            'id': self.id,
-            'tradeId': self.trade_id,
-            'ticker': self.ticker,
-            'companyName': self.company_name,
+            'id': str(self.id),
+            'tradeId': str(self.trade_id),
+            'ticker': self.security.ticker if self.security else None,
+            'name': self.security.name if self.security else None,
             'positionType': self.position_type,
-            'allocationPercentage': self.allocation_percentage,
+            'securityType': self.security_type,
+            'allocation': str(self.allocation_percent) + '%',
             'rationale': self.rationale,
-            'financialData': self.financial_data,
-            'createdAt': self.created_at.isoformat(),
-            'updatedAt': self.updated_at.isoformat()
+            'quantity': float(self.quantity) if self.quantity else None,
+            'entryPrice': float(self.entry_price) if self.entry_price else None,
+            'currentPrice': float(self.current_price) if self.current_price else None,
+            'marketValue': float(self.market_value) if self.market_value else None,
+            'status': self.status
         }
 
 
-# Database initialization function
-def init_db(app):
-    """Initialize database with Flask app"""
-    db.init_app(app)
+class Portfolio(Base):
+    """User's actual portfolio holdings"""
+    __tablename__ = 'portfolios'
     
-    with app.app_context():
-        # Create all tables
-        db.create_all()
-        print("Database tables created successfully")
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    
+    # Portfolio metadata
+    name = Column(String(255), nullable=False)
+    broker = Column(String(50), index=True)
+    broker_account_id = Column(String(255))
+    currency = Column(String(10), default='USD')
+    
+    # Portfolio values
+    total_value = Column(Numeric(20, 2))
+    cash_balance = Column(Numeric(20, 2))
+    equity_value = Column(Numeric(20, 2))
+    
+    # Performance
+    total_return = Column(Numeric(10, 4))
+    day_return = Column(Numeric(10, 4))
+    
+    # Status
+    is_active = Column(Boolean, default=True)
+    is_connected = Column(Boolean, default=False)
+    last_synced_at = Column(DateTime)
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    user = relationship("User", back_populates="portfolios")
+    holdings = relationship("PortfolioHolding", back_populates="portfolio", cascade="all, delete-orphan")
+    
+    def __repr__(self):
+        return f"<Portfolio {self.name}>"
 
 
-# Helper functions for database operations
-def get_user_by_phone(phone_number):
-    """Get user by phone number"""
-    return User.query.filter_by(phone_number=phone_number).first()
-
-
-def create_user(phone_number):
-    """Create a new user"""
-    user = User(phone_number=phone_number)
-    db.session.add(user)
-    db.session.commit()
-    return user
-
-
-def get_or_create_user(phone_number):
-    """Get existing user or create new one"""
-    user = get_user_by_phone(phone_number)
-    if not user:
-        user = create_user(phone_number)
-    else:
-        # Update last login
-        user.last_login = datetime.utcnow()
-        db.session.commit()
-    return user
-
-
-def get_user_trades(user_id, limit=50, offset=0):
-    """Get trades for a user with pagination"""
-    return Trade.query.filter_by(user_id=user_id)\
-                     .order_by(Trade.created_at.desc())\
-                     .limit(limit)\
-                     .offset(offset)\
-                     .all()
-
-
-def get_trade_by_id(trade_id, user_id=None):
-    """Get trade by ID, optionally filtered by user"""
-    query = Trade.query.filter_by(id=trade_id)
-    if user_id:
-        query = query.filter_by(user_id=user_id)
-    return query.first()
-
-
-def create_trade(user_id, name, description, recommendation, risk_level, analysis_text):
-    """Create a new trade"""
-    trade = Trade(
-        user_id=user_id,
-        name=name,
-        description=description,
-        recommendation=recommendation,
-        risk_level=risk_level,
-        analysis_text=analysis_text
+class PortfolioHolding(Base):
+    """Actual positions held in portfolio"""
+    __tablename__ = 'portfolio_holdings'
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    portfolio_id = Column(UUID(as_uuid=True), ForeignKey('portfolios.id', ondelete='CASCADE'), nullable=False, index=True)
+    security_id = Column(UUID(as_uuid=True), ForeignKey('securities.id'), nullable=False, index=True)
+    
+    # Holding details
+    quantity = Column(Numeric(20, 6), nullable=False)
+    average_entry_price = Column(Numeric(20, 6), nullable=False)
+    current_price = Column(Numeric(20, 6))
+    market_value = Column(Numeric(20, 2))
+    
+    # P&L
+    cost_basis = Column(Numeric(20, 2))
+    unrealized_pnl = Column(Numeric(20, 2))
+    unrealized_pnl_percent = Column(Numeric(10, 4))
+    
+    # Position type
+    side = Column(String(10), nullable=False)
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    last_synced_at = Column(DateTime)
+    
+    # Relationships
+    portfolio = relationship("Portfolio", back_populates="holdings")
+    security = relationship("Security", back_populates="portfolio_holdings")
+    
+    __table_args__ = (
+        UniqueConstraint('portfolio_id', 'security_id', 'side', name='uq_portfolio_security_side'),
     )
-    db.session.add(trade)
-    db.session.commit()
-    return trade
 
 
-def create_position(trade_id, ticker, company_name, position_type, 
-                   allocation_percentage, rationale, financial_data):
-    """Create a new position"""
-    position = Position(
-        trade_id=trade_id,
-        ticker=ticker,
-        company_name=company_name,
-        position_type=position_type,
-        allocation_percentage=allocation_percentage,
-        rationale=rationale,
-        financial_data=financial_data
+class PriceHistory(Base):
+    """Historical price data for securities"""
+    __tablename__ = 'price_history'
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    security_id = Column(UUID(as_uuid=True), ForeignKey('securities.id', ondelete='CASCADE'), nullable=False)
+    
+    # OHLCV data
+    date = Column(Date, nullable=False)
+    open = Column(Numeric(20, 6))
+    high = Column(Numeric(20, 6))
+    low = Column(Numeric(20, 6))
+    close = Column(Numeric(20, 6), nullable=False)
+    volume = Column(BigInteger)
+    
+    # Metadata
+    data_source = Column(String(50))
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    security = relationship("Security", back_populates="price_history")
+    
+    __table_args__ = (
+        UniqueConstraint('security_id', 'date', name='uq_security_date'),
+        Index('idx_price_history_security_date', 'security_id', 'date'),
     )
-    db.session.add(position)
-    db.session.commit()
-    return position
 
 
-def delete_trade(trade_id, user_id):
-    """Delete a trade (and its positions via cascade)"""
-    trade = get_trade_by_id(trade_id, user_id)
-    if trade:
-        db.session.delete(trade)
-        db.session.commit()
-        return True
-    return False
+class BrokerConnection(Base):
+    """Stores broker API credentials and connection status"""
+    __tablename__ = 'broker_connections'
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    portfolio_id = Column(UUID(as_uuid=True), ForeignKey('portfolios.id', ondelete='SET NULL'))
+    
+    # Broker details
+    broker = Column(String(50), nullable=False)
+    broker_account_id = Column(String(255))
+    
+    # API credentials (encrypted)
+    api_key_encrypted = Column(Text)
+    api_secret_encrypted = Column(Text)
+    access_token_encrypted = Column(Text)
+    
+    # Connection status
+    is_active = Column(Boolean, default=True)
+    is_connected = Column(Boolean, default=False)
+    last_connected_at = Column(DateTime)
+    last_sync_at = Column(DateTime)
+    
+    # Permissions
+    can_read = Column(Boolean, default=True)
+    can_trade = Column(Boolean, default=False)
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    user = relationship("User", back_populates="broker_connections")
+    
+    __table_args__ = (
+        UniqueConstraint('user_id', 'broker', 'broker_account_id', name='uq_user_broker_account'),
+    )
 
