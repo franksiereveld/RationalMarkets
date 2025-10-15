@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 # FMP Configuration
 FMP_API_KEY = os.environ.get('FMP_API_KEY', '')
-FMP_BASE_URL = 'https://financialmodelingprep.com/api/v3'
+FMP_BASE_URL = 'https://financialmodelingprep.com/stable'
 
 if not FMP_API_KEY:
     logger.warning("FMP_API_KEY not set in environment variables")
@@ -63,8 +63,8 @@ def get_stock_data(ticker):
         }
         
         # 1. Get Quote (price, volume, market cap)
-        quote_url = f"{FMP_BASE_URL}/quote/{ticker}?apikey={FMP_API_KEY}"
-        logger.info(f"Requesting: {FMP_BASE_URL}/quote/{ticker}?apikey=***")
+        quote_url = f"{FMP_BASE_URL}/quote?symbol={ticker}&apikey={FMP_API_KEY}"
+        logger.info(f"Requesting: {FMP_BASE_URL}/quote?symbol={ticker}&apikey=***")
         quote_response = requests.get(quote_url, timeout=10)
         logger.info(f"Response status: {quote_response.status_code}")
         quote_response.raise_for_status()
@@ -96,7 +96,7 @@ def get_stock_data(ticker):
                 stock_data['marketCap'] = f"${market_cap / 1_000_000:.2f}M"
         
         # 2. Get Profile (company info, sector, industry)
-        profile_url = f"{FMP_BASE_URL}/profile/{ticker}?apikey={FMP_API_KEY}"
+        profile_url = f"{FMP_BASE_URL}/profile?symbol={ticker}&apikey={FMP_API_KEY}"
         profile_response = requests.get(profile_url, timeout=10)
         profile_response.raise_for_status()
         profile_data = profile_response.json()
