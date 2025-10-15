@@ -10,7 +10,7 @@ from openai import OpenAI
 from datetime import datetime
 sys.path.append('/home/ubuntu/RationalMarkets')
 
-# Use FMP Stable API as primary (real-time data with API key)
+# Use FMP Stable API as primary (real-time data), yfinance as fallback (free delayed data)
 try:
     from financial_data_fmp import get_stock_data
     print("Using FMP Stable API for market data (real-time)")
@@ -26,6 +26,7 @@ except ImportError:
 
 # Initialize OpenAI client (API key already in environment)
 client = OpenAI()
+def analyze_trade_with_ai(trade_name: str, trade_description: str) -> dict:
     """
     Analyze a trade idea using AI and return recommendations with real market data
     
