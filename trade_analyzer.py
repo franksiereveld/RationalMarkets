@@ -11,15 +11,15 @@ from openai import OpenAI
 from datetime import datetime
 sys.path.append('/home/ubuntu/RationalMarkets')
 
-# Use Financial Modeling Prep (FMP) for production
+# Use yfinance for production (free, delayed data)
 try:
-    from financial_data_fmp import get_stock_data
-    print("Using Financial Modeling Prep (FMP) API for market data")
+    from financial_data_production import get_stock_data
+    print("Using yfinance for market data (free, delayed)")
 except ImportError:
-    # Fallback to yfinance if FMP not available
+    # Fallback to FMP if yfinance not available
     try:
-        from financial_data_production import get_stock_data
-        print("Using yfinance for market data")
+        from financial_data_fmp import get_stock_data
+        print("Using Financial Modeling Prep (FMP) API for market data")
     except ImportError:
         # Last resort: sandbox version
         from financial_data import get_stock_data
