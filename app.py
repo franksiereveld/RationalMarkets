@@ -428,6 +428,51 @@ def saved_trades_page():
     except Exception as e:
         return f"Error loading saved-trades.html: {str(e)}", 500
 
+@app.route('/index.html')
+def index_page():
+    """Serve the index page"""
+    try:
+        file_path = os.path.join(os.path.dirname(__file__), 'index.html')
+        return send_file(file_path)
+    except Exception as e:
+        return f"Error loading index.html: {str(e)}", 500
+
+@app.route('/community-trades.html')
+def community_trades_page():
+    """Serve the community trades page"""
+    try:
+        file_path = os.path.join(os.path.dirname(__file__), 'community-trades.html')
+        return send_file(file_path)
+    except Exception as e:
+        return f"Error loading community-trades.html: {str(e)}", 500
+
+@app.route('/my-positions.html')
+def my_positions_page():
+    """Serve the my positions page"""
+    try:
+        file_path = os.path.join(os.path.dirname(__file__), 'my-positions.html')
+        return send_file(file_path)
+    except Exception as e:
+        return f"Error loading my-positions.html: {str(e)}", 500
+
+@app.route('/broker-selection.html')
+def broker_selection_page():
+    """Serve the broker selection page"""
+    try:
+        file_path = os.path.join(os.path.dirname(__file__), 'broker-selection.html')
+        return send_file(file_path)
+    except Exception as e:
+        return f"Error loading broker-selection.html: {str(e)}", 500
+
+@app.route('/disclaimer.html')
+def disclaimer_page():
+    """Serve the disclaimer page"""
+    try:
+        file_path = os.path.join(os.path.dirname(__file__), 'disclaimer.html')
+        return send_file(file_path)
+    except Exception as e:
+        return f"Error loading disclaimer.html: {str(e)}", 500
+
 @app.route('/auth-check.js')
 def auth_check_js():
     """Serve the auth check JavaScript"""
