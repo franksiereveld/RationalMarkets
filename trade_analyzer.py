@@ -166,8 +166,12 @@ def enrich_with_market_data(recommendations: dict) -> dict:
         for position in recommendations['longs']:
             ticker = position['ticker']
             print(f"  Fetching data for {ticker} (long)...")
-            market_data = get_stock_data(ticker)
-            position.update(market_data)
+            try:
+                market_data = get_stock_data(ticker)
+                position.update(market_data)
+            except Exception as e:
+                print(f"  Warning: Could not fetch data for {ticker}: {e}")
+                # Continue with basic data from AI
             position['positionType'] = 'long'
     
     # Process shorts
@@ -175,8 +179,12 @@ def enrich_with_market_data(recommendations: dict) -> dict:
         for position in recommendations['shorts']:
             ticker = position['ticker']
             print(f"  Fetching data for {ticker} (short)...")
-            market_data = get_stock_data(ticker)
-            position.update(market_data)
+            try:
+                market_data = get_stock_data(ticker)
+                position.update(market_data)
+            except Exception as e:
+                print(f"  Warning: Could not fetch data for {ticker}: {e}")
+                # Continue with basic data from AI
             position['positionType'] = 'short'
     
     # Process derivatives

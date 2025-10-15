@@ -202,7 +202,7 @@
                 </div>
                 <div id="pastTradesEmpty" class="text-center py-5" style="display: none;">
                     <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
-                    <p class="text-muted">No past trades yet. Create your first trade above!</p>
+                    <p class="text-muted">Here you will see your trades</p>
                 </div>
                 <div id="pastTradesList" class="row" style="display: none;">
                     <!-- Past trades will be inserted here -->
@@ -997,6 +997,10 @@
                 
                 if (trades.length === 0) {
                     empty.style.display = 'block';
+                    empty.innerHTML = `
+                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Here you will see your trades</p>
+                    `;
                     count.textContent = '0';
                 } else {
                     list.style.display = 'block';
@@ -1007,9 +1011,23 @@
                 console.error('Error loading past trades:', error);
                 loading.style.display = 'none';
                 empty.style.display = 'block';
+                
+                // Show detailed error message
+                let errorMsg = 'Unable to load past trades.';
+                if (error.message.includes('401')) {
+                    errorMsg = 'Please log in to view your trades.';
+                } else if (error.message.includes('403')) {
+                    errorMsg = 'Access denied. Please log in again.';
+                } else if (error.message.includes('404')) {
+                    errorMsg = 'Trades endpoint not found.';
+                } else if (error.message.includes('500')) {
+                    errorMsg = 'Server error. Please try again later.';
+                }
+                
                 empty.innerHTML = `
                     <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
-                    <p class="text-muted">Unable to load past trades. Please try again later.</p>
+                    <p class="text-muted">${errorMsg}</p>
+                    <p class="text-muted small">Error: ${error.message}</p>
                 `;
             }
         }
