@@ -184,6 +184,29 @@
                 </button>
             </div>
         </div>
+        <!-- Past Trades Section -->
+        <div id="pastTradesSection" class="card mb-4" style="display: none;">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="mb-0"><i class="fas fa-history me-2"></i>Your Past Trades</h3>
+                <span id="tradesCount" class="badge bg-primary">0</span>
+            </div>
+            <div class="card-body">
+                <div id="pastTradesLoading" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Loading your trades...</p>
+                </div>
+                <div id="pastTradesEmpty" class="text-center py-5" style="display: none;">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No past trades yet. Create your first trade above!</p>
+                </div>
+                <div id="pastTradesList" class="row" style="display: none;">
+                    <!-- Past trades will be inserted here -->
+                </div>
+            </div>
+        </div>
+
 
         <!-- Loading State -->
         <div id="loadingState" class="card" style="display: none;">
@@ -328,8 +351,8 @@
                     
                     // Show a subtle notice that mock data is being used
                     const notice = document.createElement('div');
-                    notice.className = 'alert alert-info mt-3';
-                    notice.innerHTML = '<i class="fas fa-info-circle me-2"></i>Using demo analysis (API temporarily unavailable)';
+                    notice.className = 'alert alert-warning mt-3';
+                    notice.innerHTML = '<i class="fas fa-info-circle me-2"></i>Using demo analysis - API error. Please try again.';
                     document.getElementById('analysisResults').prepend(notice);
                 }
             } else {
@@ -931,6 +954,132 @@
             alert('Trade deleted successfully!');
             resetForm();
         }
+
+        // Load past trades on page load
+        async function loadPastTrades() {
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                console.log('No auth token, skipping past trades load');
+                return;
+            }
+            
+            const section = document.getElementById('pastTradesSection');
+            const loading = document.getElementById('pastTradesLoading');
+            const empty = document.getElementById('pastTradesEmpty');
+            const list = document.getElementById('pastTradesList');
+            const count = document.getElementById('tradesCount');
+            
+            section.style.display = 'block';
+            loading.style.display = 'block';
+            empty.style.display = 'none';
+            list.style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/user/trades', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const trades = await response.json();
+                
+                loading.style.display = 'none';
+                
+                if (trades.length === 0) {
+                    empty.style.display = 'block';
+                    count.textContent = '0';
+                } else {
+                    list.style.display = 'block';
+                    count.textContent = trades.length;
+                    displayPastTrades(trades);
+                }
+            } catch (error) {
+                console.error('Error loading past trades:', error);
+                loading.style.display = 'none';
+                empty.style.display = 'block';
+                empty.innerHTML = `
+                    <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                    <p class="text-muted">Unable to load past trades. Please try again later.</p>
+                `;
+            }
+        }
+        
+        function displayPastTrades(trades) {
+            const list = document.getElementById('pastTradesList');
+            list.innerHTML = '';
+            
+            // Sort by date, newest first
+            trades.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            
+            trades.forEach(trade => {
+                const date = new Date(trade.createdAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                });
+                
+                const recommendation = trade.recommendation || 'PENDING';
+                const riskLevel = trade.riskLevel || 'UNKNOWN';
+                
+                // Badge colors
+                const recColor = {
+                    'RECOMMENDED': 'success',
+                    'NOT RECOMMENDED': 'danger',
+                    'CONDITIONAL': 'warning',
+                    'PENDING': 'secondary'
+                }[recommendation] || 'secondary';
+                
+                const riskColor = {
+                    'LOW': 'success',
+                    'MODERATE': 'warning',
+                    'HIGH': 'danger',
+                    'UNKNOWN': 'secondary'
+                }[riskLevel] || 'secondary';
+                
+                const card = document.createElement('div');
+                card.className = 'col-md-6 col-lg-4 mb-3';
+                card.innerHTML = `
+                    <div class="card h-100 trade-card" style="cursor: pointer; transition: transform 0.2s;" 
+                         onclick="viewTradeDetails(${trade.id})"
+                         onmouseover="this.style.transform='translateY(-5px)'"
+                         onmouseout="this.style.transform='translateY(0)'">
+                        <div class="card-body">
+                            <h5 class="card-title">${escapeHtml(trade.name)}</h5>
+                            <p class="card-text text-muted small">${escapeHtml(trade.description.substring(0, 100))}${trade.description.length > 100 ? '...' : ''}</p>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="badge bg-${recColor}">${recommendation}</span>
+                                <span class="badge bg-${riskColor}">Risk: ${riskLevel}</span>
+                            </div>
+                            <div class="text-muted small">
+                                <i class="fas fa-calendar me-1"></i>${date}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        async function viewTradeDetails(tradeId) {
+            // Redirect to saved-trades.html with trade ID
+            window.location.href = `saved-trades.html?id=${tradeId}`;
+        }
+        
+        // Load past trades when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Wait a bit for auth check to complete
+            setTimeout(loadPastTrades, 500);
+        });
 
     </script>
     <!-- Footer -->
