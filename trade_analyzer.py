@@ -3,7 +3,6 @@
 AI-Powered Trade Analysis System
 Analyzes user trade ideas and recommends specific positions with real market data
 """
-
 import os
 import sys
 import json
@@ -11,15 +10,15 @@ from openai import OpenAI
 from datetime import datetime
 sys.path.append('/home/ubuntu/RationalMarkets')
 
-# Use yfinance for production (free, delayed data)
+# Use FMP as primary (real-time data), yfinance as fallback (free delayed data)
 try:
-    from financial_data_production import get_stock_data
-    print("Using yfinance for market data (free, delayed)")
+    from financial_data_fmp import get_stock_data
+    print("Using Financial Modeling Prep (FMP) API for market data (real-time)")
 except ImportError:
-    # Fallback to FMP if yfinance not available
+    # Fallback to yfinance if FMP not available
     try:
-        from financial_data_fmp import get_stock_data
-        print("Using Financial Modeling Prep (FMP) API for market data")
+        from financial_data_production import get_stock_data
+        print("Using yfinance for market data (free, delayed)")
     except ImportError:
         # Last resort: sandbox version
         from financial_data import get_stock_data
@@ -27,7 +26,6 @@ except ImportError:
 
 # Initialize OpenAI client (API key already in environment)
 client = OpenAI()
-
 def analyze_trade_with_ai(trade_name: str, trade_description: str) -> dict:
     """
     Analyze a trade idea using AI and return recommendations with real market data
