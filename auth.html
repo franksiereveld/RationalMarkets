@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Login - RationalMarkets</title>
     <style>
         * {
@@ -420,26 +423,36 @@
             if (value.startsWith('+')) {
                 // International format
                 let digits = value.slice(1); // Remove the +
+                let countryCode = digits.slice(0, 2);
                 
-                if (digits.length <= 2) {
-                    // Just country code
-                    e.target.value = '+' + digits;
-                } else if (digits.length <= 4) {
-                    // Country code + first part
-                    e.target.value = '+' + digits.slice(0, 2) + ' ' + digits.slice(2);
-                } else if (digits.length <= 7) {
-                    // Country code + two parts
-                    e.target.value = '+' + digits.slice(0, 2) + ' ' + digits.slice(2, 4) + ' ' + digits.slice(4);
+                // Swiss numbers (+41) have special formatting: +41 XX XXX XX XX
+                if (countryCode === '41') {
+                    if (digits.length <= 2) {
+                        e.target.value = '+' + digits;
+                    } else if (digits.length <= 4) {
+                        e.target.value = '+41 ' + digits.slice(2);
+                    } else if (digits.length <= 7) {
+                        e.target.value = '+41 ' + digits.slice(2, 4) + ' ' + digits.slice(4);
+                    } else if (digits.length <= 9) {
+                        e.target.value = '+41 ' + digits.slice(2, 4) + ' ' + digits.slice(4, 7) + ' ' + digits.slice(7);
+                    } else {
+                        e.target.value = '+41 ' + digits.slice(2, 4) + ' ' + digits.slice(4, 7) + ' ' + digits.slice(7, 9) + ' ' + digits.slice(9, 11);
+                    }
                 } else {
-                    // Full international format: +CC NN NNN NNNN
-                    e.target.value = '+' + digits.slice(0, 2) + ' ' + digits.slice(2, 4) + ' ' + digits.slice(4, 7) + ' ' + digits.slice(7, 11);
+                    // Default international format for other countries
+                    if (digits.length <= 2) {
+                        e.target.value = '+' + digits;
+                    } else if (digits.length <= 4) {
+                        e.target.value = '+' + digits.slice(0, 2) + ' ' + digits.slice(2);
+                    } else if (digits.length <= 7) {
+                        e.target.value = '+' + digits.slice(0, 2) + ' ' + digits.slice(2, 4) + ' ' + digits.slice(4);
+                    } else {
+                        e.target.value = '+' + digits.slice(0, 2) + ' ' + digits.slice(2, 4) + ' ' + digits.slice(4, 7) + ' ' + digits.slice(7, 11);
+                    }
                 }
             } else {
                 // No + sign, just format as entered
                 e.target.value = value;
-            }
-        });
-
             }
         });
         
