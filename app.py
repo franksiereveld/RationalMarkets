@@ -119,6 +119,7 @@ def analyze_trade():
         data = request.get_json()
         trade_name = data.get('tradeName', '').strip()
         trade_description = data.get('tradeDescription', '').strip()
+        include_derivatives = data.get('includeDerivatives', False)  # Default to False
         
         if not trade_name or not trade_description:
             return jsonify({
@@ -129,10 +130,11 @@ def analyze_trade():
         print(f"Analyzing Trade: {trade_name}")
         if request.user:
             print(f"User: {request.user.get('phoneNumber', 'Unknown')}")
+        print(f"Include Derivatives: {include_derivatives}")
         print(f"{'='*80}\n")
         
         # Call AI trade analyzer
-        result = analyze_trade_with_ai(trade_name, trade_description)
+        result = analyze_trade_with_ai(trade_name, trade_description, include_derivatives)
         
         # Save to database if user is authenticated
         if request.user:

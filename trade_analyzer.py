@@ -26,13 +26,14 @@ except ImportError:
 
 # Initialize OpenAI client (API key already in environment)
 client = OpenAI()
-def analyze_trade_with_ai(trade_name: str, trade_description: str) -> dict:
+def analyze_trade_with_ai(trade_name: str, trade_description: str, include_derivatives: bool = False) -> dict:
     """
     Analyze a trade idea using AI and return recommendations with real market data
     
     Args:
         trade_name: Name of the trade strategy
         trade_description: Detailed description of the trade thesis
+        include_derivatives: Whether to include derivatives (options, futures) in recommendations
         
     Returns:
         Complete trade analysis with positions, allocations, and market data
@@ -40,7 +41,8 @@ def analyze_trade_with_ai(trade_name: str, trade_description: str) -> dict:
     
     # Step 1: Get AI recommendations
     print(f"Analyzing trade: {trade_name}")
-    ai_recommendations = get_ai_recommendations(trade_name, trade_description)
+    print(f"Include derivatives: {include_derivatives}")
+    ai_recommendations = get_ai_recommendations(trade_name, trade_description, include_derivatives)
     
     # Step 2: Fetch real market data for each ticker
     print("Fetching market data for recommended tickers...")
@@ -49,10 +51,18 @@ def analyze_trade_with_ai(trade_name: str, trade_description: str) -> dict:
     return enriched_analysis
 
 
-def get_ai_recommendations(trade_name: str, trade_description: str) -> dict:
+def get_ai_recommendations(trade_name: str, trade_description: str, include_derivatives: bool = False) -> dict:
     """
     Call OpenAI to analyze the trade and recommend specific positions
+    
+    Args:
+        trade_name: Name of the trade strategy
+        trade_description: Description of the trade thesis
+        include_derivatives: Whether to include derivatives (options, futures) in recommendations
     """
+    
+    # Build the prompt based on whether derivatives are included
+    derivatives_instruction = "Please analyze this trade idea and recommend specific stocks, indices, and derivatives to implement it." if include_derivatives else "Please analyze this trade idea and recommend specific stocks and ETFs/indices to implement it. DO NOT include any derivatives (options, futures, swaps, etc.) - only long and short positions in stocks and ETFs."
     
     prompt = f"""You are an expert financial analyst and portfolio manager. A user has proposed the following trade idea:
 
@@ -60,7 +70,7 @@ def get_ai_recommendations(trade_name: str, trade_description: str) -> dict:
 
 **Trade Description:** {trade_description}
 
-Please analyze this trade idea and recommend specific stocks, indices, and derivatives to implement it.
+{derivatives_instruction}
 
 **Your response must be in valid JSON format with this exact structure:**
 
@@ -107,11 +117,11 @@ Please analyze this trade idea and recommend specific stocks, indices, and deriv
 }}
 
 **Important Guidelines:**
-1. **Security Types:** equity, fixed_income, index, future, option
+1. **Security Types:** {'equity, fixed_income, index, future, option' if include_derivatives else 'equity, index (ETFs only - NO derivatives like options or futures)'}
 2. **Position Types:** For derivatives, specify "long" or "short"
 3. **Allocations:** Must sum to approximately 100% across all positions
-4. **Tickers:** Use valid stock/ETF/index tickers (e.g., AAPL, SPY, QQQ, VIX, ^GSPC)
-5. **Use Your Judgment:** You can add shorts, hedges, or derivatives if they improve the strategy, even if not explicitly mentioned by the user
+4. **Tickers:** Use valid stock/ETF/index tickers (e.g., AAPL, SPY, QQQ, {'VIX, ^GSPC' if include_derivatives else '^GSPC'})
+5. **Use Your Judgment:** {'You can add shorts, hedges, or derivatives if they improve the strategy' if include_derivatives else 'You can add shorts or hedges using stocks/ETFs, but NO derivatives (options, futures, swaps)'}, even if not explicitly mentioned by the user
 6. **Empty Arrays:** If no positions in a category, use empty array: []
 7. **Return Estimates:** Be realistic based on the strategy and market conditions
 8. **Rationale:** Each position should have clear reasoning tied to the trade thesis
