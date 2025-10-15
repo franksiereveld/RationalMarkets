@@ -31,7 +31,9 @@ def get_stock_data(ticker):
         dict: Stock data including price, company info, and market data
     """
     try:
-        logger.info(f"Fetching data for {ticker} from FMP Stable API")
+        logger.info(f"Fetching data for {ticker} from FMP API")
+        logger.info(f"FMP_API_KEY present: {bool(FMP_API_KEY)}")
+        logger.info(f"FMP_API_KEY length: {len(FMP_API_KEY) if FMP_API_KEY else 0}")
         
         stock_data = {
             'ticker': ticker,
@@ -62,9 +64,17 @@ def get_stock_data(ticker):
         
         # 1. Get Quote (price, volume, market cap)
         quote_url = f"{FMP_BASE_URL}/quote/{ticker}?apikey={FMP_API_KEY}"
+        logger.info(f"Requesting: {FMP_BASE_URL}/quote/{ticker}?apikey=***")
         quote_response = requests.get(quote_url, timeout=10)
+        logger.info(f"Response status: {quote_response.status_code}")
         quote_response.raise_for_status()
         quote_data = quote_response.json()
+        logger.info(f"Quote data keys: {list(quote_data.keys()) if isinstance(quote_data, dict) else 'list'}")
+        
+        # Check for API error
+        if isinstance(quote_data, dict) and 'Error Message' in quote_data:
+            logger.error(f"FMP API Error: {quote_data['Error Message']}")
+            return get_fallback_data(ticker)
         
         if quote_data and len(quote_data) > 0:
             quote = quote_data[0]
