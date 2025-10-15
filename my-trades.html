@@ -442,7 +442,9 @@
             // Build detailed rationale text
             let rationaleHTML = '<div class="row g-3">';
             
-            Object.entries(analysis.returnEstimates).forEach(([period, data]) => {
+            // Safety check for returnEstimates
+            if (analysis.returnEstimates && typeof analysis.returnEstimates === 'object') {
+                Object.entries(analysis.returnEstimates).forEach(([period, data]) => {
                 const value = typeof data === 'string' ? data : data.value;
                 const rationale = typeof data === 'object' ? data.rationale : '';
                 
@@ -467,7 +469,8 @@
                         </div>
                     `;
                 }
-            });
+                });
+            }
             
             rationaleHTML += '</div>';
             document.getElementById('returnRationaleText').innerHTML = rationaleHTML;
@@ -491,6 +494,12 @@
         function displayPositionsWithCharts(positions, containerId, isLong) {
             const container = document.getElementById(containerId);
             container.innerHTML = '';
+            
+            // Safety check for positions array
+            if (!positions || !Array.isArray(positions) || positions.length === 0) {
+                container.innerHTML = '<p class="text-muted">No positions available</p>';
+                return;
+            }
             
             positions.forEach(position => {
                 const card = document.createElement('div');
