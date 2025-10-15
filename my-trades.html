@@ -298,7 +298,7 @@
         // Configuration: Set to true to use real AI API, false for mock analysis
         const USE_REAL_AI = true;  // Real AI enabled - connected to Railway backend
         let currentAnalysisResult = null;
-        const API_ENDPOINT = 'https://web-production-3b184.up.railway.app/api/analyze-trade';  // Production Railway API
+        const API_ENDPOINT = '/api/analyze-trade';  // Production Railway API
 
         async function analyzeTradeWithAI() {
             const tradeName = document.getElementById('tradeName').value.trim();
@@ -975,7 +975,7 @@
             list.style.display = 'none';
             
             try {
-                const response = await fetch('/api/user/trades', {
+                const response = await fetch('/api/trades', {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
