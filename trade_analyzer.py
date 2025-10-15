@@ -10,20 +10,22 @@ from openai import OpenAI
 from datetime import datetime
 sys.path.append('/home/ubuntu/RationalMarkets')
 
-# Use yfinance as primary (free, no API key needed, delayed data 15-20 min)
+# Use FMP Stable API as primary (real-time data with API key)
 try:
-    from financial_data_production import get_stock_data
-    print("Using yfinance for market data (free, delayed 15-20 min)")
+    from financial_data_fmp import get_stock_data
+    print("Using FMP Stable API for market data (real-time)")
 except ImportError:
-    # Fallback to sandbox version
-    from financial_data import get_stock_data
-    print("Using sandbox financial data module (Manus API Hub)")
+    # Fallback to yfinance if FMP not available
+    try:
+        from financial_data_production import get_stock_data
+        print("Using yfinance for market data (free, delayed)")
+    except ImportError:
+        # Last resort: sandbox version
+        from financial_data import get_stock_data
+        print("Using sandbox financial data module (Manus API Hub)")
 
 # Initialize OpenAI client (API key already in environment)
 client = OpenAI()
-# Initialize OpenAI client (API key already in environment)
-client = OpenAI()
-def analyze_trade_with_ai(trade_name: str, trade_description: str) -> dict:
     """
     Analyze a trade idea using AI and return recommendations with real market data
     
