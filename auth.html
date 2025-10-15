@@ -408,17 +408,38 @@
         
         // Auto-format phone number input
         document.getElementById('phoneNumber').addEventListener('input', (e) => {
-            let value = e.target.value.replace(/\D/g, '');
-            if (value.length > 0) {
-                if (value.length <= 3) {
-                    e.target.value = value;
-                } else if (value.length <= 6) {
-                    e.target.value = value.slice(0, 3) + ' ' + value.slice(3);
-                } else if (value.length <= 10) {
-                    e.target.value = value.slice(0, 3) + ' ' + value.slice(3, 6) + ' ' + value.slice(6);
+            let value = e.target.value.replace(/[^\d+]/g, ''); // Keep digits and + sign
+            
+            // Remove any + signs that are not at the start
+            if (value.indexOf('+') > 0) {
+                value = value.replace(/\+/g, '');
+                value = '+' + value;
+            }
+            
+            // Format based on whether it starts with +
+            if (value.startsWith('+')) {
+                // International format
+                let digits = value.slice(1); // Remove the +
+                
+                if (digits.length <= 2) {
+                    // Just country code
+                    e.target.value = '+' + digits;
+                } else if (digits.length <= 4) {
+                    // Country code + first part
+                    e.target.value = '+' + digits.slice(0, 2) + ' ' + digits.slice(2);
+                } else if (digits.length <= 7) {
+                    // Country code + two parts
+                    e.target.value = '+' + digits.slice(0, 2) + ' ' + digits.slice(2, 4) + ' ' + digits.slice(4);
                 } else {
-                    e.target.value = '+' + value.slice(0, 1) + ' ' + value.slice(1, 4) + ' ' + value.slice(4, 7) + ' ' + value.slice(7, 11);
+                    // Full international format: +CC NN NNN NNNN
+                    e.target.value = '+' + digits.slice(0, 2) + ' ' + digits.slice(2, 4) + ' ' + digits.slice(4, 7) + ' ' + digits.slice(7, 11);
                 }
+            } else {
+                // No + sign, just format as entered
+                e.target.value = value;
+            }
+        });
+
             }
         });
         
