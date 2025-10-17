@@ -39,23 +39,31 @@ def get_stock_data(ticker):
             'ticker': ticker,
             'name': ticker,
             'currentPrice': 0,
+            'priceChange': 0,
+            'priceChangePercent': 0,
+            'previousClose': 0,
             'marketCap': 'N/A',
             'sixMonthReturn': 0.0,
             'chartData': [],
             'pe': None,
             'ps': None,
             'pb': None,
+            'beta': None,
             'evEbitda': None,
             'fiftyTwoWeekHigh': None,
             'fiftyTwoWeekLow': None,
             'volume': 0,
             'averageVolume': None,
             'dividendYield': None,
+            'lastDividend': None,
             'sector': None,
             'industry': None,
             'country': None,
             'exchange': None,
             'description': None,
+            'ceo': None,
+            'website': None,
+            'image': None,
             'targetMeanPrice': None,
             'recommendationKey': None,
             'numberOfAnalystOpinions': None,
@@ -79,12 +87,16 @@ def get_stock_data(ticker):
         if quote_data and len(quote_data) > 0:
             quote = quote_data[0]
             stock_data['currentPrice'] = quote.get('price', 0)
+            stock_data['priceChange'] = quote.get('change', 0)
+            stock_data['priceChangePercent'] = quote.get('changesPercentage', 0)
+            stock_data['previousClose'] = quote.get('previousClose', 0)
             stock_data['name'] = quote.get('name', ticker)
             stock_data['volume'] = quote.get('volume', 0)
-            stock_data['averageVolume'] = quote.get('averageVolume')
+            stock_data['averageVolume'] = quote.get('avgVolume', quote.get('averageVolume'))
             stock_data['fiftyTwoWeekHigh'] = quote.get('yearHigh')
             stock_data['fiftyTwoWeekLow'] = quote.get('yearLow')
             stock_data['exchange'] = quote.get('exchange')
+            stock_data['pe'] = quote.get('pe')  # Extract P/E ratio from quote
             
             # Format market cap
             market_cap = quote.get('marketCap', 0)
@@ -107,7 +119,16 @@ def get_stock_data(ticker):
             stock_data['industry'] = profile.get('industry')
             stock_data['country'] = profile.get('country')
             stock_data['description'] = profile.get('description', '')[:200] + '...' if profile.get('description') else None
-            stock_data['pb'] = profile.get('beta')  # Beta as proxy for P/B
+            stock_data['beta'] = profile.get('beta')  # Beta (volatility measure)
+            stock_data['ceo'] = profile.get('ceo')
+            stock_data['website'] = profile.get('website')
+            stock_data['image'] = profile.get('image')
+            
+            # Calculate dividend yield if available
+            last_div = profile.get('lastDiv', 0)
+            if last_div and stock_data['currentPrice'] > 0:
+                stock_data['dividendYield'] = round((last_div / stock_data['currentPrice']) * 100, 2)
+                stock_data['lastDividend'] = last_div
             
         logger.info(f"Successfully fetched data for {ticker}")
         return stock_data
@@ -131,23 +152,31 @@ def get_fallback_data(ticker):
         'ticker': ticker,
         'name': ticker,
         'currentPrice': 0,
+        'priceChange': 0,
+        'priceChangePercent': 0,
+        'previousClose': 0,
         'marketCap': 'N/A',
         'sixMonthReturn': 0.0,
         'chartData': [],
         'pe': None,
         'ps': None,
         'pb': None,
+        'beta': None,
         'evEbitda': None,
         'fiftyTwoWeekHigh': None,
         'fiftyTwoWeekLow': None,
         'volume': 0,
         'averageVolume': None,
         'dividendYield': None,
+        'lastDividend': None,
         'sector': None,
         'industry': None,
         'country': None,
         'exchange': None,
         'description': None,
+        'ceo': None,
+        'website': None,
+        'image': None,
         'targetMeanPrice': None,
         'recommendationKey': None,
         'numberOfAnalystOpinions': None,

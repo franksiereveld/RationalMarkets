@@ -537,24 +537,19 @@
                 const card = document.createElement('div');
                 card.className = `position-card ${isLong ? 'long-position' : 'short-position'}`;
                 
-                // Use real financial data if available, otherwise generate mock data
-                const rawFinancialData = position.financialData || null;
-                
-                // Handle nested financialData structure from API
-                const financialData = rawFinancialData && rawFinancialData.financialData ? rawFinancialData.financialData : rawFinancialData;
-                
+                // FIXED: Data is directly on position object after backend enrichment
                 // Check if we have valid financial data or need mock data
-                const hasValidData = financialData && financialData.currentPrice && financialData.currentPrice > 0;
+                const hasValidData = position.currentPrice && position.currentPrice > 0;
                 const mockData = hasValidData ? null : generateMockFinancialData(position.ticker);
                 
-                // Extract data from either real or mock source
-                const priceChange = hasValidData ? (financialData.priceChange || 0) : mockData.priceChange;
-                const currentPrice = hasValidData ? `$${financialData.currentPrice}` : mockData.price;
-                const marketCap = hasValidData ? (financialData.marketCap || 'N/A') : mockData.marketCap;
-                const pe = hasValidData && financialData.pe ? financialData.pe : (mockData ? mockData.pe : 'N/A');
-                const ps = hasValidData && financialData.ps ? financialData.ps : (mockData ? mockData.ps : 'N/A');
-                const pb = hasValidData && financialData.pb ? financialData.pb : (mockData ? mockData.pb : 'N/A');
-                const evEbitda = hasValidData && financialData.evEbitda ? financialData.evEbitda : (mockData ? mockData.ev_ebitda : 'N/A');
+                // Extract data directly from position object (not nested)
+                const priceChange = hasValidData ? (position.priceChangePercent || position.priceChange || 0) : mockData.priceChange;
+                const currentPrice = hasValidData ? `$${position.currentPrice.toFixed(2)}` : mockData.price;
+                const marketCap = hasValidData ? (position.marketCap || 'N/A') : mockData.marketCap;
+                const pe = hasValidData && position.pe ? position.pe.toFixed(2) : (mockData ? mockData.pe : 'N/A');
+                const ps = hasValidData && position.ps ? position.ps.toFixed(2) : (mockData ? mockData.ps : 'N/A');
+                const pb = hasValidData && position.pb ? position.pb.toFixed(2) : (mockData ? mockData.pb : 'N/A');
+                const evEbitda = hasValidData && position.evEbitda ? position.evEbitda.toFixed(2) : (mockData ? mockData.ev_ebitda : 'N/A');
                 
                 card.innerHTML = `
                     <div class="d-flex justify-content-between align-items-start mb-3">
@@ -630,10 +625,11 @@
                 container.appendChild(card);
                 
                 // Draw the chart after the element is added to DOM
-                if (financialData && financialData.chartData && financialData.chartData.length > 0) {
-                    setTimeout(() => drawRealChart(position.ticker, financialData), 100);
+                // FIXED: Check chartData directly on position object
+                if (position.chartData && position.chartData.length > 0) {
+                    setTimeout(() => drawRealChart(position.ticker, position), 100);
                 } else {
-                    setTimeout(() => drawMockChart(position.ticker, mockData || {priceChange: 0, price: '$0.00'}), 100);
+                    setTimeout(() => drawMockChart(position.ticker, mockData || {priceChange: priceChange, price: currentPrice}), 100);
                 }
             });
         }
