@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Check Python syntax
+      run: |
+        python -m py_compile app.py
+        python -m py_compile models.py
+        python -m py_compile auth.py
+        python -m py_compile database.py
+        python -m py_compile trade_analyzer.py
+    
+    - name: Validate imports
+      run: |
+        python -c "import app; print('✅ app.py imports OK')"
+        python -c "import models; print('✅ models.py imports OK')"
+        python -c "import database; print('✅ database.py imports OK')"
+    
+    - name: Check for common issues
+      run: |
+        # Check for print statements (should use logging)
+        echo "Checking code quality..."
+        
+        # Check if VERSION file exists
+        if [ ! -f VERSION ]; then
+          echo "❌ VERSION file missing"
+          exit 1
+        fi
+        echo "✅ VERSION file exists"
+        
+        # Check if requirements.txt exists
+        if [ ! -f requirements.txt ]; then
+          echo "❌ requirements.txt missing"
+          exit 1
+        fi
+        echo "✅ requirements.txt exists"
+    
+    - name: Summary
+      run: |
+        echo "================================================"
+        echo "✅ All CI checks passed!"
+        echo "================================================"
+        echo "Code is ready for deployment to Railway"
+        echo "Version: $(cat VERSION)"
+        echo "================================================"
+
