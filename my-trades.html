@@ -539,7 +539,7 @@
                 
                 // Check if we have valid financial data or need mock data
                 const hasValidData = financialData && financialData.currentPrice && financialData.currentPrice > 0;
-                const mockData = hasValidData ? null : generateMockFinancialData(position.symbol);
+                const mockData = hasValidData ? null : generateMockFinancialData(position.ticker);
                 
                 // Extract data from either real or mock source
                 const priceChange = hasValidData ? (financialData.priceChange || 0) : mockData.priceChange;
@@ -553,7 +553,7 @@
                 card.innerHTML = `
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <div>
-                            <span class="badge ${isLong ? 'bg-success' : 'bg-danger'}">${position.symbol}</span>
+                            <span class="badge ${isLong ? 'bg-success' : 'bg-danger'}">${position.ticker}</span>
                             <strong class="ms-2">${position.name}</strong>
                         </div>
                         <span class="badge bg-secondary">${position.allocation}</span>
@@ -562,7 +562,7 @@
                     <!-- Stock Chart -->
                     <div class="mb-3">
                         <div class="chart-container" style="height: 350px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; position: relative; overflow: hidden;">
-                            <canvas id="chart-${position.symbol}" width="100%" height="200"></canvas>
+                            <canvas id="chart-${position.ticker}" width="100%" height="200"></canvas>
                             <div style="position: absolute; top: 10px; left: 15px;">
                                 <small class="text-muted">6M Price Chart</small>
                             </div>
@@ -625,9 +625,9 @@
                 
                 // Draw the chart after the element is added to DOM
                 if (financialData && financialData.chartData && financialData.chartData.length > 0) {
-                    setTimeout(() => drawRealChart(position.symbol, financialData), 100);
+                    setTimeout(() => drawRealChart(position.ticker, financialData), 100);
                 } else {
-                    setTimeout(() => drawMockChart(position.symbol, mockData || {priceChange: 0, price: '$0.00'}), 100);
+                    setTimeout(() => drawMockChart(position.ticker, mockData || {priceChange: 0, price: '$0.00'}), 100);
                 }
             });
         }
