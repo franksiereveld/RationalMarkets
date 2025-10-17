@@ -120,6 +120,7 @@ def get_stock_data(ticker):
             stock_data['country'] = profile.get('country')
             stock_data['description'] = profile.get('description', '')[:200] + '...' if profile.get('description') else None
             stock_data['beta'] = profile.get('beta')  # Beta (volatility measure)
+            stock_data['pb'] = profile.get('priceToBookRatio')  # Price-to-Book ratio
             stock_data['ceo'] = profile.get('ceo')
             stock_data['website'] = profile.get('website')
             stock_data['image'] = profile.get('image')
@@ -129,6 +130,20 @@ def get_stock_data(ticker):
             if last_div and stock_data['currentPrice'] > 0:
                 stock_data['dividendYield'] = round((last_div / stock_data['currentPrice']) * 100, 2)
                 stock_data['lastDividend'] = last_div
+        
+        # 3. Get Financial Ratios (P/S, EV/EBITDA)
+        try:
+            ratios_url = f"{FMP_BASE_URL}/ratios-ttm?symbol={ticker}&apikey={FMP_API_KEY}"
+            ratios_response = requests.get(ratios_url, timeout=10)
+            ratios_response.raise_for_status()
+            ratios_data = ratios_response.json()
+            
+            if ratios_data and len(ratios_data) > 0:
+                ratios = ratios_data[0]
+                stock_data['ps'] = ratios.get('priceToSalesRatioTTM')
+                stock_data['evEbitda'] = ratios.get('enterpriseValueMultipleTTM')
+        except Exception as e:
+            logger.warning(f"Could not fetch ratios for {ticker}: {e}")
             
         logger.info(f"Successfully fetched data for {ticker}")
         return stock_data

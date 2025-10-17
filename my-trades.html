@@ -252,6 +252,16 @@
                 </div>
             </div>
 
+            <!-- AI Rationale -->
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="fas fa-brain me-2"></i>AI Analysis & Rationale</h4>
+                </div>
+                <div class="card-body">
+                    <p id="aiRationale" class="mb-0"></p>
+                </div>
+            </div>
+
 <!-- Long Positions -->
             <div id="longPositionsCard" class="card" style="display: none;">
                 <div class="card-header">
@@ -279,16 +289,6 @@
                 </div>
                 <div class="card-body">
                     <div id="derivativePositions"></div>
-                </div>
-            </div>
-
-            <!-- AI Rationale -->
-            <div class="card">
-                <div class="card-header">
-                    <h4 class="mb-0"><i class="fas fa-brain me-2"></i>AI Analysis & Rationale</h4>
-                </div>
-                <div class="card-body">
-                    <p id="aiRationale" class="mb-0"></p>
                 </div>
             </div>
 
@@ -412,10 +412,10 @@
                         { symbol: 'SQQQ', name: 'ProShares UltraPro Short QQQ', allocation: '15%', rationale: 'Triple-leveraged short on tech-heavy NASDAQ' }
                     ],
                     shortPositions: [
-                        { symbol: 'NVDA', name: 'NVIDIA Corporation', allocation: '25%', rationale: 'Most overvalued AI stock with P/E over 60, vulnerable to correction' },
-                        { symbol: 'TSLA', name: 'Tesla Inc.', allocation: '20%', rationale: 'AI/FSD promises not delivering, high valuation unsustainable' },
-                        { symbol: 'PLTR', name: 'Palantir Technologies', allocation: '15%', rationale: 'AI hype stock with limited revenue growth to justify valuation' },
-                        { symbol: 'C3AI', name: 'C3.ai Inc.', allocation: '10%', rationale: 'Pure AI play with massive losses and uncertain path to profitability' }
+                        { symbol: 'NVDA', name: 'NVIDIA Corporation', allocation: '-25%', rationale: 'Most overvalued AI stock with P/E over 60, vulnerable to correction' },
+                        { symbol: 'TSLA', name: 'Tesla Inc.', allocation: '-20%', rationale: 'AI/FSD promises not delivering, high valuation unsustainable' },
+                        { symbol: 'PLTR', name: 'Palantir Technologies', allocation: '-15%', rationale: 'AI hype stock with limited revenue growth to justify valuation' },
+                        { symbol: 'C3AI', name: 'C3.ai Inc.', allocation: '-10%', rationale: 'Pure AI play with massive losses and uncertain path to profitability' }
                     ],
                     returnEstimates: {
                         '1M': { value: '12.5%', rationale: 'Initial market recognition of AI overvaluation begins, early short positions start paying off as sentiment shifts' },
@@ -439,8 +439,8 @@
                         { symbol: 'GOOGL', name: 'Alphabet Inc.', allocation: '15%', rationale: 'Advanced AI research and cloud infrastructure' }
                     ],
                     shortPositions: [
-                        { symbol: 'TLPFY', name: 'Teleperformance SE', allocation: '15%', rationale: 'Call center services vulnerable to AI automation' },
-                        { symbol: 'HRB', name: 'H&R Block Inc.', allocation: '10%', rationale: 'Tax preparation being automated by AI tools' }
+                        { symbol: 'TLPFY', name: 'Teleperformance SE', allocation: '-15%', rationale: 'Call center services vulnerable to AI automation' },
+                        { symbol: 'HRB', name: 'H&R Block Inc.', allocation: '-10%', rationale: 'Tax preparation being automated by AI tools' }
                     ],
                     returnEstimates: {
                         '1M': { value: '8.5%', rationale: 'Strong AI earnings reports drive initial momentum, market recognizes AI infrastructure value' },
@@ -568,13 +568,13 @@
                             <span class="badge ${isLong ? 'bg-success' : 'bg-danger'}">${position.ticker}</span>
                             <strong class="ms-2">${position.name}</strong>
                         </div>
-                        <span class="badge bg-secondary">${position.allocation}</span>
+                        <span class="badge ${isLong ? 'bg-success' : 'bg-danger'}">${position.allocation} ${isLong ? 'Long' : 'Short'}</span>
                     </div>
                     
                     <!-- Stock Chart -->
                     <div class="mb-3">
                         <div class="chart-container" style="height: 350px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; position: relative; overflow: hidden;">
-                            <canvas id="chart-${position.ticker}" width="100%" height="200"></canvas>
+                            <canvas id="chart-${position.ticker}" style="display: block; width: 100%; height: 350px;"></canvas>
                             <div style="position: absolute; top: 10px; left: 15px;">
                                 <small class="text-muted">6M Price Chart</small>
                             </div>
@@ -588,28 +588,34 @@
                     
                     <!-- Financial Multiples -->
                     <div class="row mb-3">
-                        <div class="col-3">
+                        <div class="col">
                             <div class="text-center p-2" style="background: rgba(0,123,255,0.1); border-radius: 6px;">
                                 <div class="fw-bold text-primary">${pe}</div>
                                 <small class="text-muted">P/E</small>
                             </div>
                         </div>
-                        <div class="col-3">
+                        <div class="col">
                             <div class="text-center p-2" style="background: rgba(40,167,69,0.1); border-radius: 6px;">
                                 <div class="fw-bold text-success">${ps}</div>
                                 <small class="text-muted">P/S</small>
                             </div>
                         </div>
-                        <div class="col-3">
+                        <div class="col">
                             <div class="text-center p-2" style="background: rgba(255,193,7,0.1); border-radius: 6px;">
                                 <div class="fw-bold text-warning">${pb}</div>
                                 <small class="text-muted">P/B</small>
                             </div>
                         </div>
-                        <div class="col-3">
+                        <div class="col">
                             <div class="text-center p-2" style="background: rgba(220,53,69,0.1); border-radius: 6px;">
                                 <div class="fw-bold text-danger">${evEbitda}</div>
                                 <small class="text-muted">EV/EBITDA</small>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="text-center p-2" style="background: rgba(108,117,125,0.1); border-radius: 6px;">
+                                <div class="fw-bold text-secondary">${position.beta || 'N/A'}</div>
+                                <small class="text-muted">Beta</small>
                             </div>
                         </div>
                     </div>
