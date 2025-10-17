@@ -22,7 +22,7 @@ except ImportError:
     except ImportError:
         # Last resort: sandbox version
         from financial_data import get_stock_data
-        print("Using sandbox financial data module (Manus API Hub)")
+        print("Using sandbox financial data module")
 
 # Initialize OpenAI client (API key already in environment)
 client = OpenAI()
@@ -64,6 +64,15 @@ def get_ai_recommendations(trade_name: str, trade_description: str, include_deri
     # Build the prompt based on whether derivatives are included
     derivatives_instruction = "Please analyze this trade idea and recommend specific stocks, indices, and derivatives to implement it." if include_derivatives else "Please analyze this trade idea and recommend specific stocks and ETFs/indices to implement it. DO NOT include any derivatives (options, futures, swaps, etc.) - only long and short positions in stocks and ETFs."
     
+    # Build security types string
+    security_types = 'equity, fixed_income, index, future, option' if include_derivatives else 'equity, index (ETFs only - NO derivatives like options or futures)'
+    
+    # Build tickers string
+    tickers_example = 'AAPL, SPY, QQQ, VIX, ^GSPC' if include_derivatives else 'AAPL, SPY, QQQ, ^GSPC'
+    
+    # Build judgment string
+    judgment_text = 'You can add shorts, hedges, or derivatives if they improve the strategy' if include_derivatives else 'You can add shorts or hedges using stocks/ETFs, but NO derivatives (options, futures, swaps)'
+    
     prompt = f"""You are an expert financial analyst and portfolio manager. A user has proposed the following trade idea:
 
 **Trade Name:** {trade_name}
@@ -79,22 +88,22 @@ def get_ai_recommendations(trade_name: str, trade_description: str, include_deri
   "recommendation": "RECOMMENDED" or "NOT RECOMMENDED" or "CONDITIONAL",
   "riskLevel": "LOW" or "MODERATE" or "HIGH" or "VERY HIGH",
   "longs": [
-    {
+    {{
       "ticker": "AAPL",
       "name": "Apple Inc.",
       "allocation": "25%",
       "securityType": "equity",
       "rationale": "Why this position supports the trade thesis"
-    }
+    }}
   ],
   "shorts": [
-    {
+    {{
       "ticker": "TSLA",
       "name": "Tesla Inc.",
       "allocation": "-15%",
       "securityType": "equity",
       "rationale": "Why shorting this supports the trade thesis"
-    }
+    }}
   ],
   "derivatives": [
     {{
@@ -117,15 +126,15 @@ def get_ai_recommendations(trade_name: str, trade_description: str, include_deri
 }}
 
 **Important Guidelines:**
-1. **Security Types:** {'equity, fixed_income, index, future, option' if include_derivatives else 'equity, index (ETFs only - NO derivatives like options or futures)'}
+1. **Security Types:** {security_types}
 2. **Position Types:** For derivatives, specify "long" or "short"
 3. **Allocations - CRITICAL:** 
    - Long positions should sum to approximately 100% (e.g., 25%, 30%, 45%)
    - Short positions MUST be NEGATIVE percentages (e.g., -15%, -20%, -30%)
    - Net exposure = Sum of longs + Sum of shorts (e.g., 100% long + (-50%) short = 50% net exposure)
    - Example: If longs = [25%, 35%, 40%] and shorts = [-15%, -20%], net exposure = 100% - 35% = 65%
-4. **Tickers:** Use valid stock/ETF/index tickers (e.g., AAPL, SPY, QQQ, {'VIX, ^GSPC' if include_derivatives else '^GSPC'})
-5. **Use Your Judgment:** {'You can add shorts, hedges, or derivatives if they improve the strategy' if include_derivatives else 'You can add shorts or hedges using stocks/ETFs, but NO derivatives (options, futures, swaps)'}, even if not explicitly mentioned by the user
+4. **Tickers:** Use valid stock/ETF/index tickers (e.g., {tickers_example})
+5. **Use Your Judgment:** {judgment_text}, even if not explicitly mentioned by the user
 6. **Empty Arrays:** If no positions in a category, use empty array: []
 7. **Return Estimates:** Be realistic based on the strategy and market conditions
 8. **Rationale:** Each position should have clear reasoning tied to the trade thesis
@@ -256,4 +265,3 @@ if __name__ == "__main__":
     print("ANALYSIS RESULT")
     print("=" * 80)
     print(json.dumps(result, indent=2))
-
