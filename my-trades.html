@@ -508,10 +508,16 @@
             });
 
             // Long positions
-            displayPositionsWithCharts(analysis.longs || [], 'longPositions', true);
+            if (analysis.longs && analysis.longs.length > 0) {
+                document.getElementById('longPositionsCard').style.display = 'block';
+                displayPositionsWithCharts(analysis.longs, 'longPositions', true);
+            }
 
             // Short positions
-            displayPositionsWithCharts(analysis.shorts || [], 'shortPositions', false);
+            if (analysis.shorts && analysis.shorts.length > 0) {
+                document.getElementById('shortPositionsCard').style.display = 'block';
+                displayPositionsWithCharts(analysis.shorts, 'shortPositions', false);
+            }
             
             // Derivatives (if any)
             if (analysis.derivatives && analysis.derivatives.length > 0) {
