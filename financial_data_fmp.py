@@ -88,7 +88,7 @@ def get_stock_data(ticker):
             quote = quote_data[0]
             stock_data['currentPrice'] = quote.get('price', 0)
             stock_data['priceChange'] = quote.get('change', 0)
-            stock_data['priceChangePercent'] = quote.get('changesPercentage', 0)
+            stock_data['priceChangePercent'] = quote.get('changePercentage', 0)
             stock_data['previousClose'] = quote.get('previousClose', 0)
             stock_data['name'] = quote.get('name', ticker)
             stock_data['volume'] = quote.get('volume', 0)
