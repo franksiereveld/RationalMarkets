@@ -248,14 +248,25 @@ class Position(Base):
         return f"<Position {self.position_type} {self.security.ticker if self.security else 'N/A'}>"
     
     def to_dict(self):
+        # Safely access security attributes
+        ticker = None
+        name = None
+        try:
+            if self.security:
+                ticker = self.security.ticker
+                name = self.security.name
+        except Exception:
+            # Security relationship not loaded or error accessing it
+            pass
+        
         return {
             'id': str(self.id),
             'trade_id': str(self.trade_id),
-            'ticker': self.security.ticker if self.security else None,
-            'name': self.security.name if self.security else None,
+            'ticker': ticker,
+            'name': name,
             'position_type': self.position_type,
             'security_type': self.security_type,
-            'allocation': str(self.allocation_percent) + '%',
+            'allocation': str(self.allocation_percent) + '%' if self.allocation_percent else None,
             'rationale': self.rationale,
             'quantity': float(self.quantity) if self.quantity else None,
             'entryPrice': float(self.entry_price) if self.entry_price else None,

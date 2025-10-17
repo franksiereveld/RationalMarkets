@@ -224,11 +224,17 @@ def analyze_trade():
 def get_user_trades():
     """Get all trades for authenticated user"""
     try:
+        from sqlalchemy.orm import joinedload
+        
         with DatabaseSession() as session:
-            trades = session.query(Trade).filter_by(
+            # Eagerly load positions and their securities to avoid lazy loading issues
+            trades = session.query(Trade).options(
+                joinedload(Trade.positions).joinedload(Position.security)
+            ).filter_by(
                 user_id=request.user['id']
             ).order_by(Trade.created_at.desc()).all()
             
+            # Convert to dict while still in session context
             trades_data = [trade.to_dict() for trade in trades]
         
         return jsonify({
@@ -238,9 +244,11 @@ def get_user_trades():
     
     except Exception as e:
         print(f"Error getting trades: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({
             'success': False,
-            'message': 'Failed to fetch trades'
+            'message': f'Failed to fetch trades: {str(e)}'
         }), 500
 
 
