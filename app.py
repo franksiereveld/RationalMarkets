@@ -185,10 +185,19 @@ def analyze_trade():
         # Save to database if user is authenticated
         if request.user:
             try:
+                from uuid import UUID
+                
+                # Convert user_id string to UUID object
+                user_id_str = request.user['id']
+                if isinstance(user_id_str, str):
+                    user_id = UUID(user_id_str)
+                else:
+                    user_id = user_id_str
+                
                 with DatabaseSession() as session:
                     # Create trade record
                     trade = Trade(
-                        user_id=request.user['id'],
+                        user_id=user_id,
                         trade_name=trade_name,
                         trade_description=trade_description,
                         ai_rationale=result.get('aiRationale'),
