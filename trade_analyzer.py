@@ -62,7 +62,8 @@ def get_ai_recommendations(trade_name: str, trade_description: str, include_deri
     """
     
     # Build the prompt based on whether derivatives are included
-    derivatives_instruction = "Please analyze this trade idea and recommend specific stocks, indices, and derivatives to implement it." if include_derivatives else "Please analyze this trade idea and recommend specific stocks and ETFs/indices to implement it. DO NOT include any derivatives (options, futures, swaps, etc.) - only long and short positions in stocks and ETFs."
+    # Note: Currently limited to US stocks only (no ETFs, no indices) due to data provider limitations
+    derivatives_instruction = "Please analyze this trade idea and recommend specific US stocks to implement it. DO NOT include any derivatives (options, futures, swaps, etc.), ETFs, or indices - only long and short positions in US-listed individual stocks." if not include_derivatives else "Please analyze this trade idea and recommend specific US stocks and derivatives to implement it. DO NOT include ETFs or indices - only US-listed individual stocks and derivatives."
     
     prompt = f"""You are an expert financial analyst and portfolio manager. A user has proposed the following trade idea:
 
@@ -117,14 +118,15 @@ def get_ai_recommendations(trade_name: str, trade_description: str, include_deri
 }}
 
 **Important Guidelines:**
-1. **Security Types:** {'equity, fixed_income, index, future, option' if include_derivatives else 'equity, index (ETFs only - NO derivatives like options or futures)'}
+1. **Security Types:** ONLY 'equity' (US-listed individual stocks). NO ETFs, NO indices, NO international stocks.
 2. **Position Types:** For derivatives, specify "long" or "short"
 3. **Allocations:** Must sum to approximately 100% across all positions
-4. **Tickers:** Use valid stock/ETF/index tickers (e.g., AAPL, SPY, QQQ, {'VIX, ^GSPC' if include_derivatives else '^GSPC'})
-5. **Use Your Judgment:** {'You can add shorts, hedges, or derivatives if they improve the strategy' if include_derivatives else 'You can add shorts or hedges using stocks/ETFs, but NO derivatives (options, futures, swaps)'}, even if not explicitly mentioned by the user
+4. **Tickers:** Use valid US stock tickers ONLY (e.g., AAPL, JPM, TSLA, BAC). DO NOT use ETF tickers (SPY, QQQ, XLF, ITB, etc.) or index symbols (^GSPC, ^DJI, etc.)
+5. **Use Your Judgment:** {'You can add shorts, hedges, or derivatives if they improve the strategy' if include_derivatives else 'You can add shorts or hedges using US stocks only'}, even if not explicitly mentioned by the user
 6. **Empty Arrays:** If no positions in a category, use empty array: []
 7. **Return Estimates:** Be realistic based on the strategy and market conditions
 8. **Rationale:** Each position should have clear reasoning tied to the trade thesis
+9. **CRITICAL:** If the user's trade idea requires ETFs or indices, recommend equivalent individual stocks instead. For example, instead of SPY (S&P 500 ETF), recommend a basket of large-cap stocks like AAPL, MSFT, GOOGL, etc.
 
 Provide your complete analysis in valid JSON format only, no additional text."""
 
