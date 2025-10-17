@@ -182,6 +182,14 @@
                     <label for="tradeDescription" class="form-label fw-bold">Trade Idea Description</label>
                     <textarea class="form-control" id="tradeDescription" rows="4" placeholder="Describe your investment thesis... e.g., 'I believe AI stocks are in a bubble and want to short the most overvalued ones like NVIDIA and Tesla.'"></textarea>
                 </div>
+                <div class="mb-4">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="includeDerivatives" value="">
+                        <label class="form-check-label" for="includeDerivatives">
+                            <strong>Include Derivatives</strong> <span class="text-muted">(options, futures)</span>
+                        </label>
+                    </div>
+                </div>
                 <button class="btn btn-primary btn-lg w-100" onclick="analyzeTradeWithAI()">
                     <i class="fas fa-brain me-2"></i>Generate Trade Recommendation
                 </button>
@@ -239,7 +247,7 @@
             </div>
 
 <!-- Long Positions -->
-            <div class="card">
+            <div id="longPositionsCard" class="card" style="display: none;">
                 <div class="card-header">
                     <h4 class="mb-0"><i class="fas fa-arrow-up me-2 text-success"></i>Long Positions</h4>
                 </div>
@@ -249,12 +257,22 @@
             </div>
 
             <!-- Short Positions -->
-            <div class="card">
+            <div id="shortPositionsCard" class="card" style="display: none;">
                 <div class="card-header">
                     <h4 class="mb-0"><i class="fas fa-arrow-down me-2 text-danger"></i>Short Positions</h4>
                 </div>
                 <div class="card-body">
                     <div id="shortPositions"></div>
+                </div>
+            </div>
+
+            <!-- Derivatives -->
+            <div id="derivativesCard" class="card" style="display: none;">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="fas fa-chart-line me-2 text-warning"></i>Derivatives</h4>
+                </div>
+                <div class="card-body">
+                    <div id="derivativePositions"></div>
                 </div>
             </div>
 
@@ -306,6 +324,7 @@
         async function analyzeTradeWithAI() {
             const tradeName = document.getElementById('tradeName').value.trim();
             const tradeDescription = document.getElementById('tradeDescription').value.trim();
+            const includeDerivatives = document.getElementById('includeDerivatives').checked;
             
             if (!tradeName || !tradeDescription) {
                 alert('Please fill in both trade name and description');
@@ -328,7 +347,8 @@
                         },
                         body: JSON.stringify({
                             tradeName: tradeName,
-                            tradeDescription: tradeDescription
+                            tradeDescription: tradeDescription,
+                            includeDerivatives: includeDerivatives
                         })
                     });
 
