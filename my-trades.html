@@ -524,16 +524,21 @@
         }
 
         function displayPositionsWithCharts(positions, containerId, isLong) {
+            console.log('[displayPositionsWithCharts] START - containerId:', containerId);
             const container = document.getElementById(containerId);
+            console.log('[displayPositionsWithCharts] Container found:', container);
             container.innerHTML = '';
             
             // Safety check for positions array
             if (!positions || !Array.isArray(positions) || positions.length === 0) {
+                console.log('[displayPositionsWithCharts] No positions, returning');
                 container.innerHTML = '<p class="text-muted">No positions available</p>';
                 return;
             }
+            console.log('[displayPositionsWithCharts] Processing', positions.length, 'positions');
             
-            positions.forEach(position => {
+            positions.forEach((position, index) => {
+                console.log('[displayPositionsWithCharts] Processing position', index, ':', position.ticker);
                 const card = document.createElement('div');
                 card.className = `position-card ${isLong ? 'long-position' : 'short-position'}`;
                 
@@ -622,7 +627,9 @@
                     <!-- Rationale -->
                     <p class="text-muted mb-0">${position.rationale}</p>
                 `;
+                console.log('[displayPositionsWithCharts] Appending card for', position.ticker);
                 container.appendChild(card);
+                console.log('[displayPositionsWithCharts] Card appended successfully');
                 
                 // Draw the chart after the element is added to DOM
                 // FIXED: Check chartData directly on position object
