@@ -475,6 +475,24 @@ def disclaimer_page():
     except Exception as e:
         return f"Error loading disclaimer.html: {str(e)}", 500
 
+@app.route('/demo-trading.html')
+def demo_trading_page():
+    """Serve the demo trading page"""
+    try:
+        file_path = os.path.join(os.path.dirname(__file__), 'demo-trading.html')
+        return send_file(file_path)
+    except Exception as e:
+        return f"Error loading demo-trading.html: {str(e)}", 500
+
+@app.route('/strategy-enhanced.html')
+def strategy_enhanced_page():
+    """Serve the enhanced strategy page"""
+    try:
+        file_path = os.path.join(os.path.dirname(__file__), 'strategy-enhanced.html')
+        return send_file(file_path)
+    except Exception as e:
+        return f"Error loading strategy-enhanced.html: {str(e)}", 500
+
 @app.route('/auth-check.js')
 def auth_check_js():
     """Serve the auth check JavaScript"""
