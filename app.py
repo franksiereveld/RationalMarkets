@@ -360,21 +360,20 @@ def get_user_stats():
 @app.route('/health', methods=['GET'])
 def health():
     """Health check endpoint"""
-    import subprocess
     db_healthy = db.health_check()
     
-    # Get git commit hash for version tracking
+    # Get version from VERSION file (git not available in Railway)
     try:
-        git_hash = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD'], 
-                                          cwd=os.path.dirname(__file__),
-                                          stderr=subprocess.DEVNULL).decode().strip()
+        version_file = os.path.join(os.path.dirname(__file__), 'VERSION')
+        with open(version_file, 'r') as f:
+            version = f.read().strip()
     except:
-        git_hash = 'unknown'
+        version = 'unknown'
     
     return jsonify({
         'status': 'healthy' if db_healthy else 'degraded',
         'service': 'RationalMarkets API',
-        'version': git_hash,
+        'version': version,
         'deployed_at': datetime.utcnow().isoformat(),
         'database': 'connected' if db_healthy else 'disconnected',
         'authentication': 'enabled',
