@@ -360,11 +360,22 @@ def get_user_stats():
 @app.route('/health', methods=['GET'])
 def health():
     """Health check endpoint"""
+    import subprocess
     db_healthy = db.health_check()
+    
+    # Get git commit hash for version tracking
+    try:
+        git_hash = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD'], 
+                                          cwd=os.path.dirname(__file__),
+                                          stderr=subprocess.DEVNULL).decode().strip()
+    except:
+        git_hash = 'unknown'
     
     return jsonify({
         'status': 'healthy' if db_healthy else 'degraded',
         'service': 'RationalMarkets API',
+        'version': git_hash,
+        'deployed_at': datetime.utcnow().isoformat(),
         'database': 'connected' if db_healthy else 'disconnected',
         'authentication': 'enabled',
         'twilio': 'configured' if auth_service.twilio_client else 'not configured'
