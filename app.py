@@ -101,6 +101,52 @@ def get_current_user():
     }), 200
 
 
+@app.route('/api/auth/test-login', methods=['POST'])
+def test_login():
+    """TEST ONLY: Create a test user and return JWT token (bypasses Twilio)"""
+    try:
+        data = request.get_json()
+        test_phone = data.get('phoneNumber', '+15551234567')
+        
+        with DatabaseSession() as session:
+            # Get or create test user
+            user = session.query(User).filter_by(phone_number=test_phone).first()
+            
+            if not user:
+                user = User(
+                    phone_number=test_phone,
+                    is_verified=True,
+                    last_login=datetime.utcnow(),
+                    full_name='Test User'
+                )
+                session.add(user)
+                session.commit()
+            else:
+                user.last_login = datetime.utcnow()
+                session.commit()
+            
+            # Generate JWT token
+            token = auth_service.generate_jwt_token(user)
+            
+            return jsonify({
+                'success': True,
+                'message': 'Test login successful',
+                'token': token,
+                'user': {
+                    'id': str(user.id),
+                    'phone_number': user.phone_number,
+                    'full_name': user.full_name
+                }
+            }), 200
+    
+    except Exception as e:
+        print(f"Error in test login: {e}")
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
+
+
 # ============================================================================
 # TRADE ANALYSIS ENDPOINTS
 # ============================================================================
