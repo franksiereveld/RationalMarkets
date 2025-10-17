@@ -271,13 +271,21 @@ def get_user_trades():
     """Get all trades for authenticated user"""
     try:
         from sqlalchemy.orm import joinedload
+        from uuid import UUID
+        
+        # Convert user_id string to UUID object
+        user_id_str = request.user['id']
+        if isinstance(user_id_str, str):
+            user_id = UUID(user_id_str)
+        else:
+            user_id = user_id_str
         
         with DatabaseSession() as session:
             # Eagerly load positions and their securities to avoid lazy loading issues
             trades = session.query(Trade).options(
                 joinedload(Trade.positions).joinedload(Position.security)
             ).filter_by(
-                user_id=request.user['id']
+                user_id=user_id
             ).order_by(Trade.created_at.desc()).all()
             
             # Convert to dict while still in session context
