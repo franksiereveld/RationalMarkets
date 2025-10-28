@@ -13,6 +13,8 @@ def calculate_portfolio_beta(positions):
     
     Returns:
         float: Portfolio beta
+    
+    Note: Shorts have NEGATIVE beta contribution (they reduce portfolio beta)
     """
     total_beta = 0.0
     
@@ -20,7 +22,8 @@ def calculate_portfolio_beta(positions):
         # Parse allocation (remove % sign, convert to decimal)
         allocation_str = position.get('allocation', '0%').replace('%', '')
         try:
-            weight = abs(float(allocation_str) / 100.0)  # Use absolute value for shorts
+            # Keep the sign! Negative for shorts, positive for longs
+            weight = float(allocation_str) / 100.0
         except ValueError:
             continue
         
@@ -34,7 +37,7 @@ def calculate_portfolio_beta(positions):
         except (ValueError, TypeError):
             beta = 1.0
         
-        # Weighted contribution
+        # Weighted contribution (negative weight for shorts reduces beta)
         total_beta += weight * beta
     
     return round(total_beta, 2)
@@ -88,26 +91,53 @@ def calculate_net_exposure(longs, shorts):
     }
 
 
-def calculate_investment_breakdown(exposure_dict, investment_amount=1000):
+def calculate_investment_breakdown(exposure_dict, investment_amount=1000, margin_requirement=0.5):
     """
     Calculate dollar amounts for a hypothetical investment
     
     Args:
         exposure_dict: Output from calculate_net_exposure()
-        investment_amount: Dollar amount (default $1000)
+        investment_amount: Base investment amount (default $1000)
+        margin_requirement: Margin requirement for shorts (default 0.5 = 50% Reg T)
     
     Returns:
         dict: Dollar amounts for long, short, net positions
+    
+    Note: Shorts PROVIDE cash but REQUIRE margin to be posted
     """
+    # For a $1000 base investment with 100% long / 35% short:
+    # - Longs: $1000 (cash outflow)
+    # - Shorts: $350 (cash INFLOW from selling borrowed shares)
+    # - Margin: $350 × 50% = $175 (cash held as collateral)
+    # - Net capital required: $1000 - $350 + $175 = $825
+    
     long_dollars = (exposure_dict['long_exposure'] / 100) * investment_amount
     short_dollars = (abs(exposure_dict['short_exposure']) / 100) * investment_amount
-    net_dollars = (exposure_dict['net_exposure'] / 100) * investment_amount
+    
+    # Margin requirement for shorts (typically 50%)
+    short_margin = short_dollars * margin_requirement
+    
+    # Net capital = longs - short proceeds + margin requirement
+    net_capital_required = long_dollars - short_dollars + short_margin
+    
+    # Gross exposure (total positions, ignoring direction)
+    gross_dollars = long_dollars + short_dollars
+    
+    # Create detailed calculation breakdown
+    calculation_steps = [
+        f"Long positions: {exposure_dict['long_exposure']}% × ${investment_amount} = ${long_dollars:.2f} (cash out)",
+        f"Short positions: {abs(exposure_dict['short_exposure'])}% × ${investment_amount} = ${short_dollars:.2f} (cash in from selling borrowed shares)",
+        f"Margin requirement: ${short_dollars:.2f} × {margin_requirement*100:.0f}% = ${short_margin:.2f} (held as collateral)",
+        f"Net capital = ${long_dollars:.2f} - ${short_dollars:.2f} + ${short_margin:.2f} = ${net_capital_required:.2f}"
+    ]
     
     return {
-        'long_dollars': round(long_dollars, 2),      # e.g., $1000.00
-        'short_dollars': round(short_dollars, 2),    # e.g., $350.00
-        'net_dollars': round(net_dollars, 2),        # e.g., $650.00
-        'total_capital_required': round(long_dollars + short_dollars, 2)  # e.g., $1350.00
+        'long_dollars': round(long_dollars, 2),           # e.g., $1000.00 (cash out)
+        'short_dollars': round(short_dollars, 2),         # e.g., $350.00 (cash in)
+        'short_margin': round(short_margin, 2),           # e.g., $175.00 (margin held)
+        'net_capital_required': round(net_capital_required, 2),  # e.g., $825.00
+        'gross_exposure': round(gross_dollars, 2),        # e.g., $1350.00 (total positions)
+        'calculation_steps': calculation_steps            # Detailed breakdown
     }
 
 
@@ -179,9 +209,10 @@ if __name__ == "__main__":
     print(f"  Short: {metrics['short_exposure']}%")
     print(f"  Net: {metrics['net_exposure']}%")
     print(f"  Gross: {metrics['gross_exposure']}%")
-    print(f"\nFor $1000 Investment:")
-    print(f"  Long positions: ${metrics['long_dollars']}")
-    print(f"  Short positions: ${metrics['short_dollars']}")
-    print(f"  Net exposure: ${metrics['net_dollars']}")
-    print(f"  Total capital required: ${metrics['total_capital_required']}")
+    print(f"\nFor $1000 Base Investment:")
+    print(f"  Net capital required: ${metrics['net_capital_required']}")
+    print(f"  Gross exposure: ${metrics['gross_exposure']} (total positions)")
+    print(f"\n  Calculation breakdown:")
+    for step in metrics['calculation_steps']:
+        print(f"    • {step}")
 
