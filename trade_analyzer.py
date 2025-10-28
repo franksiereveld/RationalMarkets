@@ -8,6 +8,7 @@ import sys
 import json
 from openai import OpenAI
 from datetime import datetime
+from portfolio_metrics import calculate_portfolio_metrics
 sys.path.append('/home/ubuntu/RationalMarkets')
 
 # Use FMP Stable API as primary (real-time data), yfinance as fallback (free delayed data)
@@ -48,6 +49,11 @@ def analyze_trade_with_ai(trade_name: str, trade_description: str, include_deriv
     print("Fetching market data for recommended tickers...")
     enriched_analysis = enrich_with_market_data(ai_recommendations)
     
+    # Step 3: Calculate portfolio-level metrics
+    print("Calculating portfolio metrics...")
+    portfolio_metrics = calculate_portfolio_metrics(enriched_analysis)
+    enriched_analysis['portfolioMetrics'] = portfolio_metrics
+    
     return enriched_analysis
 
 
@@ -86,7 +92,9 @@ def get_ai_recommendations(trade_name: str, trade_description: str, include_deri
 {{
   "tradeName": "{trade_name}",
   "recommendation": "RECOMMENDED" or "NOT RECOMMENDED" or "CONDITIONAL",
+  "sentiment": "BULLISH" or "BEARISH" or "NEUTRAL",
   "riskLevel": "LOW" or "MODERATE" or "HIGH" or "VERY HIGH",
+  "alpha": 2.5,
   "longs": [
     {{
       "ticker": "AAPL",
@@ -117,10 +125,15 @@ def get_ai_recommendations(trade_name: str, trade_description: str, include_deri
   ],
   "returnEstimates": {{
     "1M": "5.2%",
-    "3M": "12.5%",
-    "6M": "22.3%",
-    "1Y": "35.8%",
+    "6M": "15.5%",
+    "1Y": "22.8%",
     "3Y": "95.4%"
+  }},
+  "returnRationales": {{
+    "1M": "Short-term drivers and expected volatility",
+    "6M": "Medium-term catalysts and growth trajectory",
+    "1Y": "Annual targets based on fundamentals and valuation",
+    "3Y": "Long-term thesis and compounding assumptions"
   }},
   "aiRationale": "Overall explanation of the trade strategy, why these positions work together, key risks, and return expectations"
 }}
@@ -136,8 +149,11 @@ def get_ai_recommendations(trade_name: str, trade_description: str, include_deri
 4. **Tickers:** Use valid stock/ETF/index tickers (e.g., {tickers_example})
 5. **Use Your Judgment:** {judgment_text}, even if not explicitly mentioned by the user
 6. **Empty Arrays:** If no positions in a category, use empty array: []
-7. **Return Estimates:** Be realistic based on the strategy and market conditions
-8. **Rationale:** Each position should have clear reasoning tied to the trade thesis
+7. **Sentiment:** Classify as BULLISH (net long >50%), BEARISH (net short), or NEUTRAL (balanced) based on trade thesis
+8. **Alpha:** Estimate expected excess return vs. S&P 500 benchmark (e.g., 2.5 means 2.5% outperformance)
+9. **Return Estimates:** Provide for 1M, 6M, 1Y, 3Y periods - be realistic based on strategy and market conditions
+10. **Return Rationales:** For EACH period (1M, 6M, 1Y, 3Y), provide a text explanation of the drivers and assumptions
+11. **Position Rationale:** Each position should have clear reasoning tied to the trade thesis
 
 Provide your complete analysis in valid JSON format only, no additional text."""
 
