@@ -30,6 +30,7 @@ jobs:
         python -m py_compile models.py
         python -m py_compile auth.py
         python -m py_compile database.py
+        python -m py_compile portfolio_metrics.py
         python -m py_compile trade_analyzer.py
     
     - name: Validate imports
