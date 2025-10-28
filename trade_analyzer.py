@@ -25,8 +25,13 @@ except ImportError:
         from financial_data import get_stock_data
         print("Using sandbox financial data module")
 
-# Initialize OpenAI client (API key already in environment)
-client = OpenAI()
+# Initialize OpenAI client lazily (only when needed)
+def get_openai_client():
+    """Get or create OpenAI client (lazy initialization)"""
+    global _openai_client
+    if '_openai_client' not in globals():
+        _openai_client = OpenAI()
+    return _openai_client
 def analyze_trade_with_ai(trade_name: str, trade_description: str, include_derivatives: bool = False) -> dict:
     """
     Analyze a trade idea using AI and return recommendations with real market data
@@ -158,6 +163,7 @@ def get_ai_recommendations(trade_name: str, trade_description: str, include_deri
 Provide your complete analysis in valid JSON format only, no additional text."""
 
     try:
+        client = get_openai_client()
         response = client.chat.completions.create(
             model="gpt-4.1-mini",
             messages=[
