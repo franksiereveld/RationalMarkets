@@ -458,10 +458,25 @@
             document.getElementById('resultTradeName').textContent = analysis.tradeName;
             document.getElementById('resultOwner').textContent = analysis.owner;
             document.getElementById('resultDate').textContent = analysis.date;
-            document.getElementById('resultRecommendation').textContent = analysis.recommendation;
+            
+            // Use sentiment instead of recommendation
+            const sentiment = analysis.sentiment || 'NEUTRAL';
+            const sentimentBadge = document.getElementById('resultRecommendation');
+            sentimentBadge.textContent = sentiment;
+            
+            // Sentiment badge colors
+            sentimentBadge.className = 'badge me-2';
+            if (sentiment === 'BULLISH') {
+                sentimentBadge.classList.add('bg-success');
+            } else if (sentiment === 'BEARISH') {
+                sentimentBadge.classList.add('bg-danger');
+            } else {
+                sentimentBadge.classList.add('bg-secondary');
+            }
+            
             document.getElementById('resultRisk').textContent = 'Risk: ' + analysis.riskLevel;
 
-            // Return estimates with rationales
+            // Return estimates with rationales (now in separate fields)
             const returnGrid = document.getElementById('returnGrid');
             returnGrid.innerHTML = '';
             
@@ -470,9 +485,9 @@
             
             // Safety check for returnEstimates
             if (analysis.returnEstimates && typeof analysis.returnEstimates === 'object') {
-                Object.entries(analysis.returnEstimates).forEach(([period, data]) => {
-                const value = typeof data === 'string' ? data : data.value;
-                const rationale = typeof data === 'object' ? data.rationale : '';
+                Object.entries(analysis.returnEstimates).forEach(([period, value]) => {
+                // Get rationale from separate returnRationales object
+                const rationale = analysis.returnRationales ? analysis.returnRationales[period] : '';
                 
                 // Create return card with tooltip
                 const card = document.createElement('div');
@@ -525,6 +540,61 @@
                 displayPositionsWithCharts(analysis.derivatives, 'derivativePositions', true);
             }
 
+            // Portfolio Metrics (Issue 4, 7, 8)
+            if (analysis.portfolioMetrics) {
+                const metrics = analysis.portfolioMetrics;
+                let metricsHTML = `
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-3">
+                            <div class="p-3 bg-light rounded text-center">
+                                <div class="text-muted small">Portfolio Beta</div>
+                                <div class="fw-bold fs-4">${metrics.portfolio_beta || 'N/A'}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3 bg-light rounded text-center">
+                                <div class="text-muted small">Alpha</div>
+                                <div class="fw-bold fs-4">${analysis.alpha || metrics.alpha || 'N/A'}%</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3 bg-light rounded text-center">
+                                <div class="text-muted small">Net Exposure</div>
+                                <div class="fw-bold fs-4">${metrics.net_exposure || 'N/A'}%</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3 bg-light rounded text-center">
+                                <div class="text-muted small">Gross Exposure</div>
+                                <div class="fw-bold fs-4">${metrics.gross_exposure || 'N/A'}%</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-3 bg-white rounded border">
+                        <h6 class="mb-2">For $1000 Investment:</h6>
+                        <div class="mb-2"><strong>Net Capital Required:</strong> $${metrics.net_capital_required || 'N/A'}</div>
+                        <div class="text-muted small">
+                            <div class="mb-1"><strong>Calculation:</strong></div>
+                `;
+                
+                if (metrics.calculation_steps && Array.isArray(metrics.calculation_steps)) {
+                    metrics.calculation_steps.forEach(step => {
+                        metricsHTML += `<div class="ms-3">• ${step}</div>`;
+                    });
+                }
+                
+                metricsHTML += `
+                        </div>
+                    </div>
+                `;
+                
+                // Insert before AI rationale
+                const rationaleCard = document.getElementById('aiRationale').closest('.card');
+                const metricsDiv = document.createElement('div');
+                metricsDiv.innerHTML = metricsHTML;
+                rationaleCard.parentNode.insertBefore(metricsDiv, rationaleCard);
+            }
+            
             // AI rationale
             document.getElementById('aiRationale').textContent = analysis.aiRationale;
         }
