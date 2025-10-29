@@ -207,6 +207,18 @@
                 </button>
             </div>
             
+            <!-- Step 1.5: Enter Name (for new users) -->
+            <div id="nameStep" class="auth-step hidden">
+                <p>Welcome! Please enter your name</p>
+                <input 
+                    type="text" 
+                    id="fullName" 
+                    placeholder="Your full name"
+                    autocomplete="name"
+                />
+                <button id="continueNameBtn" onclick="continueTo CodeStep()">Continue</button>
+            </div>
+            
             <!-- Step 2: Enter Verification Code -->
             <div id="codeStep" class="auth-step hidden">
                 <p>Enter the 6-digit code sent to <span id="phoneDisplay" class="phone-display"></span></p>
@@ -308,14 +320,23 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    // Show code step
-                    document.getElementById('phoneStep').classList.add('hidden');
-                    document.getElementById('codeStep').classList.remove('hidden');
-                    document.getElementById('phoneDisplay').textContent = currentPhoneNumber;
-                    showMessage('Verification code sent! Check your phone.', 'success');
-                    
-                    // Focus on code input
-                    document.getElementById('verificationCode').focus();
+                    // Check if this is a new user
+                    if (data.isNewUser) {
+                        // Show name step for new users
+                        document.getElementById('phoneStep').classList.add('hidden');
+                        document.getElementById('nameStep').classList.remove('hidden');
+                        document.getElementById('fullName').focus();
+                        showMessage('Welcome! Please tell us your name.', 'success');
+                    } else {
+                        // Show code step for existing users
+                        document.getElementById('phoneStep').classList.add('hidden');
+                        document.getElementById('codeStep').classList.remove('hidden');
+                        document.getElementById('phoneDisplay').textContent = currentPhoneNumber;
+                        showMessage('Verification code sent! Check your phone.', 'success');
+                        
+                        // Focus on code input
+                        document.getElementById('verificationCode').focus();
+                    }
                 } else {
                     showMessage(data.message || 'Failed to send code. Please try again.', 'error');
                 }
@@ -326,6 +347,29 @@
                 sendBtn.disabled = false;
                 sendBtn.innerHTML = 'Send Code';
             }
+        }
+        
+        // Continue from name step to code step
+        function continueToCodeStep() {
+            const nameInput = document.getElementById('fullName');
+            const name = nameInput.value.trim();
+            
+            if (!name || name.length < 2) {
+                showMessage('Please enter your full name', 'error');
+                return;
+            }
+            
+            // Store name temporarily
+            sessionStorage.setItem('pendingUserName', name);
+            
+            // Show code step
+            document.getElementById('nameStep').classList.add('hidden');
+            document.getElementById('codeStep').classList.remove('hidden');
+            document.getElementById('phoneDisplay').textContent = currentPhoneNumber;
+            showMessage('Verification code sent! Check your phone.', 'success');
+            
+            // Focus on code input
+            document.getElementById('verificationCode').focus();
         }
         
         // Verify code
@@ -345,20 +389,33 @@
             hideMessage();
             
             try {
+                // Get pending name if new user
+                const pendingName = sessionStorage.getItem('pendingUserName');
+                
+                const requestBody = {
+                    phoneNumber: currentPhoneNumber,
+                    code: code
+                };
+                
+                // Add name if this is a new user signup
+                if (pendingName) {
+                    requestBody.fullName = pendingName;
+                }
+                
                 const response = await fetch(`${API_BASE_URL}/api/auth/verify-code`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        phoneNumber: currentPhoneNumber,
-                        code: code
-                    })
+                    body: JSON.stringify(requestBody)
                 });
                 
                 const data = await response.json();
                 
                 if (data.success) {
+                    // Clear pending name
+                    sessionStorage.removeItem('pendingUserName');
+                    
                     // Store JWT token
                     localStorage.setItem('authToken', data.token);
                     localStorage.setItem('user', JSON.stringify(data.user));

@@ -214,18 +214,6 @@
                 </button>
             </div>
         </div>
-        <!-- Current Trade Section (most recent) -->
-        <div id="currentTradeSection" class="card mb-4" style="display: none;">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h3 class="mb-0"><i class="fas fa-star me-2 text-warning"></i>Current Trade</h3>
-            </div>
-            <div class="card-body">
-                <div id="currentTradeCard" class="row">
-                    <!-- Current trade card will be inserted here -->
-                </div>
-            </div>
-        </div>
-
 
 
         <!-- Loading State -->
@@ -326,6 +314,19 @@
                 </button>
             </div>
         </div>
+
+        <!-- Latest Trade Section (most recent) -->
+        <div id="currentTradeSection" class="card mb-4" style="display: none;">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="mb-0"><i class="fas fa-star me-2 text-warning"></i>Latest Trade</h3>
+            </div>
+            <div class="card-body">
+                <div id="currentTradeCard" class="row">
+                    <!-- Current trade card will be inserted here -->
+                </div>
+            </div>
+        </div>
+
 
         <!-- Past Trades Section -->
         <div id="pastTradesSection" class="card mb-4" style="display: none;">
@@ -489,8 +490,19 @@
 
         function displayAnalysis(analysis) {
             document.getElementById('resultTradeName').textContent = analysis.tradeName;
-            document.getElementById('resultOwner').textContent = analysis.owner;
-            document.getElementById('resultDate').textContent = analysis.date;
+            
+            // Get user info from localStorage or use default
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            const ownerName = user.name || user.email || 'You';
+            document.getElementById('resultOwner').textContent = ownerName;
+            
+            // Format date properly
+            const date = analysis.date ? new Date(analysis.date) : new Date();
+            document.getElementById('resultDate').textContent = date.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+            });
             
             // Use sentiment instead of recommendation
             const sentiment = analysis.sentiment || 'NEUTRAL';
@@ -1064,10 +1076,10 @@
                 btn.disabled = true;
             }
             
-            // Reload past trades to show new trade in Current Trade section
+            // Reload past trades to show new trade in Latest Trade section
             await loadPastTrades();
             
-            // Scroll to Current Trade section
+            // Scroll to Latest Trade section
             const currentTradeSection = document.getElementById('currentTradeSection');
             if (currentTradeSection && currentTradeSection.style.display !== 'none') {
                 currentTradeSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
