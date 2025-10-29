@@ -746,53 +746,66 @@
                         <div id="tradingview-chart-${position.ticker}" style="height: 400px; border-radius: 8px; overflow: hidden;"></div>
                     </div>
                     
-                    <!-- Financial Multiples -->
-                    <div class="row mb-3">
-                        <div class="col">
-                            <div class="text-center p-2" style="background: rgba(0,123,255,0.1); border-radius: 6px;">
-                                <div class="fw-bold text-primary">${pe}</div>
-                                <small class="text-muted">P/E</small>
+                    <!-- Key Metrics (Only Available) -->
+                    <div class="mb-3">
+                        <h6 class="text-muted mb-2">Key Metrics</h6>
+                        <div class="row g-2">
+                            ${currentPrice !== 'N/A' ? `
+                            <div class="col-6 col-md-4">
+                                <div class="d-flex justify-content-between p-2" style="background: rgba(108,117,125,0.05); border-radius: 6px;">
+                                    <small class="text-muted">Current Price</small>
+                                    <strong>${currentPrice}</strong>
+                                </div>
                             </div>
-                        </div>
-                        <div class="col">
-                            <div class="text-center p-2" style="background: rgba(40,167,69,0.1); border-radius: 6px;">
-                                <div class="fw-bold text-success">${ps}</div>
-                                <small class="text-muted">P/S</small>
+                            ` : ''}
+                            ${marketCap !== 'N/A' ? `
+                            <div class="col-6 col-md-4">
+                                <div class="d-flex justify-content-between p-2" style="background: rgba(108,117,125,0.05); border-radius: 6px;">
+                                    <small class="text-muted">Market Cap</small>
+                                    <strong>${marketCap}</strong>
+                                </div>
                             </div>
-                        </div>
-                        <div class="col">
-                            <div class="text-center p-2" style="background: rgba(255,193,7,0.1); border-radius: 6px;">
-                                <div class="fw-bold text-warning">${pb}</div>
-                                <small class="text-muted">P/B</small>
+                            ` : ''}
+                            ${pe !== 'N/A' ? `
+                            <div class="col-6 col-md-4">
+                                <div class="d-flex justify-content-between p-2" style="background: rgba(108,117,125,0.05); border-radius: 6px;">
+                                    <small class="text-muted">Price-to-Earnings</small>
+                                    <strong>${pe}</strong>
+                                </div>
                             </div>
-                        </div>
-                        <div class="col">
-                            <div class="text-center p-2" style="background: rgba(220,53,69,0.1); border-radius: 6px;">
-                                <div class="fw-bold text-danger">${evEbitda}</div>
-                                <small class="text-muted">EV/EBITDA</small>
+                            ` : ''}
+                            ${ps !== 'N/A' ? `
+                            <div class="col-6 col-md-4">
+                                <div class="d-flex justify-content-between p-2" style="background: rgba(108,117,125,0.05); border-radius: 6px;">
+                                    <small class="text-muted">Price-to-Sales</small>
+                                    <strong>${ps}</strong>
+                                </div>
                             </div>
-                        </div>
-                        <div class="col">
-                            <div class="text-center p-2" style="background: rgba(108,117,125,0.1); border-radius: 6px;">
-                                <div class="fw-bold text-secondary">${position.beta || 'N/A'}</div>
-                                <small class="text-muted">Beta</small>
+                            ` : ''}
+                            ${pb !== 'N/A' ? `
+                            <div class="col-6 col-md-4">
+                                <div class="d-flex justify-content-between p-2" style="background: rgba(108,117,125,0.05); border-radius: 6px;">
+                                    <small class="text-muted">Price-to-Book</small>
+                                    <strong>${pb}</strong>
+                                </div>
                             </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Current Price & Market Cap -->
-                    <div class="row mb-3">
-                        <div class="col-6">
-                            <div class="text-center p-2" style="background: rgba(108,117,125,0.1); border-radius: 6px;">
-                                <div class="fw-bold">${currentPrice}</div>
-                                <small class="text-muted">Current Price</small>
+                            ` : ''}
+                            ${evEbitda !== 'N/A' ? `
+                            <div class="col-6 col-md-4">
+                                <div class="d-flex justify-content-between p-2" style="background: rgba(108,117,125,0.05); border-radius: 6px;">
+                                    <small class="text-muted">EV/EBITDA</small>
+                                    <strong>${evEbitda}</strong>
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="text-center p-2" style="background: rgba(108,117,125,0.1); border-radius: 6px;">
-                                <div class="fw-bold">${marketCap}</div>
-                                <small class="text-muted">Market Cap</small>
+                            ` : ''}
+                            ${position.beta && position.beta !== 'N/A' ? `
+                            <div class="col-6 col-md-4">
+                                <div class="d-flex justify-content-between p-2" style="background: rgba(108,117,125,0.05); border-radius: 6px;">
+                                    <small class="text-muted">Beta</small>
+                                    <strong>${position.beta}</strong>
+                                </div>
                             </div>
+                            ` : ''}
                         </div>
                     </div>
                     
