@@ -403,6 +403,9 @@
                     
                     document.getElementById('loadingState').style.display = 'none';
                     document.getElementById('analysisResults').style.display = 'block';
+                    
+                    // Reload past trades to update "My Latest Trade" section
+                    await loadPastTrades();
                 } catch (error) {
                     console.error('AI Analysis Error:', error);
                     
@@ -1294,34 +1297,6 @@
                             </span>
                         </div>
                         
-                        <!-- Return Estimates Grid -->
-                        <div class="row g-3 mb-3">
-                            <div class="col-3">
-                                <div class="text-center">
-                                    <div class="text-muted small">1M</div>
-                                    <div class="fw-bold" style="font-size: 1.2rem; color: ${return1M.startsWith('-') ? '#dc3545' : '#28a745'};">${return1M}</div>
-                                </div>
-                            </div>
-                            <div class="col-3">
-                                <div class="text-center">
-                                    <div class="text-muted small">6M</div>
-                                    <div class="fw-bold" style="font-size: 1.2rem; color: ${return6M.startsWith('-') ? '#dc3545' : '#28a745'};">${return6M}</div>
-                                </div>
-                            </div>
-                            <div class="col-3">
-                                <div class="text-center">
-                                    <div class="text-muted small">1Y</div>
-                                    <div class="fw-bold" style="font-size: 1.2rem; color: ${return1Y.startsWith('-') ? '#dc3545' : '#28a745'};">${return1Y}</div>
-                                </div>
-                            </div>
-                            <div class="col-3">
-                                <div class="text-center">
-                                    <div class="text-muted small">3Y</div>
-                                    <div class="fw-bold" style="font-size: 1.2rem; color: ${return3Y.startsWith('-') ? '#dc3545' : '#28a745'};">${return3Y}</div>
-                                </div>
-                            </div>
-                        </div>
-                        
                         <!-- Position Tickers -->
                         <div class="mb-3">
                             ${longTickers.length > 0 ? `
@@ -1362,8 +1337,33 @@
         }
         
         async function viewTradeDetails(tradeId) {
-            // Redirect to saved-trades.html with trade ID
-            window.location.href = `saved-trades.html?id=${tradeId}`;
+            try {
+                // Fetch the trade details from the server
+                const response = await fetch(`/api/trades/${tradeId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to load trade details');
+                }
+                
+                const trade = await response.json();
+                
+                // Display the trade in the analysis results section
+                displayAnalysis(trade);
+                displayPositionsWithCharts(trade);
+                
+                // Show the analysis results section
+                document.getElementById('analysisResults').style.display = 'block';
+                
+                // Scroll to the analysis results section
+                document.getElementById('analysisResults').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } catch (error) {
+                console.error('Error loading trade details:', error);
+                alert('Failed to load trade details. Please try again.');
+            }
         }
         
         // Load past trades when page loads
