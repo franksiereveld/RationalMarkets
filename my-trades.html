@@ -1332,12 +1332,24 @@
                         
                         <!-- Action Buttons -->
                         <div class="d-flex gap-2">
-                            <button class="btn btn-primary" onclick="event.stopPropagation(); investInTrade('${trade.id}', '${escapeHtml(trade.trade_name)}')" style="border-radius: 10px; padding: 0.5rem 1.5rem;">
+                            <button class="btn btn-primary" onclick="event.stopPropagation(); investInTrade('${trade.id}', '${escapeHtml(trade.trade_name)}')\" style="border-radius: 10px; padding: 0.5rem 1.5rem;">
                                 <i class="fas fa-plus"></i> Invest
                             </button>
-                            <button class="btn btn-outline-primary" onclick="event.stopPropagation(); viewTradeDetails('${trade.id}')" style="border-radius: 10px; padding: 0.5rem 1.5rem;">
+                            <button class="btn btn-outline-primary" id="viewDetailsBtn-${trade.id}" onclick="event.stopPropagation(); toggleTradeDetails('${trade.id}')" style="border-radius: 10px; padding: 0.5rem 1.5rem;">
                                 <i class="fas fa-eye"></i> View Details
                             </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Collapsible Details Section -->
+                    <div id="tradeDetails-${trade.id}" class="trade-details-collapse" style="display: none; border-top: 1px solid #dee2e6;">
+                        <div class="p-4" id="tradeDetailsContent-${trade.id}">
+                            <div class="text-center py-4">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p class="mt-2 text-muted">Loading trade details...</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1448,33 +1460,176 @@
             }
         }
         
-        async function viewTradeDetails(tradeId) {
-            try {
-                // Fetch the trade details from the server
-                const response = await fetch(`/api/trades/${tradeId}`, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        // Track which trade details are currently open
+        const openTradeDetails = new Set();
+        
+        async function toggleTradeDetails(tradeId) {
+            const detailsDiv = document.getElementById(`tradeDetails-${tradeId}`);
+            const contentDiv = document.getElementById(`tradeDetailsContent-${tradeId}`);
+            const button = document.getElementById(`viewDetailsBtn-${tradeId}`);
+            
+            // If already open, close it
+            if (openTradeDetails.has(tradeId)) {
+                detailsDiv.style.display = 'none';
+                openTradeDetails.delete(tradeId);
+                button.innerHTML = '<i class="fas fa-eye"></i> View Details';
+                return;
+            }
+            
+            // Close all other open details
+            openTradeDetails.forEach(id => {
+                document.getElementById(`tradeDetails-${id}`).style.display = 'none';
+                document.getElementById(`viewDetailsBtn-${id}`).innerHTML = '<i class="fas fa-eye"></i> View Details';
+            });
+            openTradeDetails.clear();
+            
+            // Open this one
+            detailsDiv.style.display = 'block';
+            openTradeDetails.add(tradeId);
+            button.innerHTML = '<i class="fas fa-eye-slash"></i> Hide Details';
+            
+            // If content not loaded yet, fetch it
+            if (contentDiv.querySelector('.spinner-border')) {
+                try {
+                    // Fetch the trade details from the server
+                    const response = await fetch(`/api/trades/${tradeId}`, {
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('Failed to load trade details');
                     }
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Failed to load trade details');
+                    
+                    const data = await response.json();
+                    const trade = data.trade || data; // Handle both {success: true, trade: {...}} and direct trade object
+                    
+                    // Build the details HTML
+                    const detailsHTML = buildTradeDetailsHTML(trade);
+                    contentDiv.innerHTML = detailsHTML;
+                    
+                    // Initialize charts after a short delay to ensure DOM is ready
+                    setTimeout(() => {
+                        initializeTradeCharts(trade, tradeId);
+                    }, 100);
+                } catch (error) {
+                    console.error('Error loading trade details:', error);
+                    contentDiv.innerHTML = `
+                        <div class="alert alert-danger" role="alert">
+                            <i class="fas fa-exclamation-triangle"></i> Failed to load trade details. Please try again.
+                        </div>
+                    `;
                 }
+            }
+            
+            // Scroll to the details section
+            setTimeout(() => {
+                detailsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 100);
+        }
+        
+        function buildTradeDetailsHTML(trade) {
+            const longs = trade.longs || [];
+            const shorts = trade.shorts || [];
+            const derivatives = trade.derivatives || [];
+            
+            return `
+                <!-- AI Analysis -->
+                <div class="mb-4">
+                    <h5 class="mb-3"><i class="fas fa-brain"></i> AI Analysis & Rationale</h5>
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <p class="mb-0">${escapeHtml(trade.ai_rationale || 'No analysis available')}</p>
+                        </div>
+                    </div>
+                </div>
                 
-                const data = await response.json();
-                const trade = data.trade || data; // Handle both {success: true, trade: {...}} and direct trade object
+                <!-- Expected Returns -->
+                <div class="mb-4">
+                    <h5 class="mb-3"><i class="fas fa-chart-line"></i> Expected Returns</h5>
+                    <div class="row g-3">
+                        <div class="col-6 col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <div class="text-muted small">1 Month</div>
+                                    <div class="h4 mb-0">${(trade.returnEstimates && trade.returnEstimates['1M']) || 'N/A'}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <div class="text-muted small">6 Months</div>
+                                    <div class="h4 mb-0">${(trade.returnEstimates && trade.returnEstimates['6M']) || 'N/A'}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <div class="text-muted small">1 Year</div>
+                                    <div class="h4 mb-0">${(trade.returnEstimates && trade.returnEstimates['1Y']) || 'N/A'}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <div class="text-muted small">3 Years</div>
+                                    <div class="h4 mb-0">${(trade.returnEstimates && trade.returnEstimates['3Y']) || 'N/A'}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 
-                // Display the trade in the analysis results section
-                displayAnalysis(trade);
-                
-                // Show the analysis results section
-                document.getElementById('analysisResults').style.display = 'block';
-                
-                // Scroll to the analysis results section
-                document.getElementById('analysisResults').scrollIntoView({ behavior: 'smooth', block: 'start' });
-            } catch (error) {
-                console.error('Error loading trade details:', error);
-                alert('Failed to load trade details. Please try again.');
+                <!-- Positions -->
+                <div class="mb-4">
+                    <h5 class="mb-3"><i class="fas fa-briefcase"></i> Positions</h5>
+                    ${longs.length > 0 ? `
+                        <h6 class="text-success mb-2"><i class="fas fa-arrow-up"></i> Long Positions</h6>
+                        <div id="longPositions-${trade.id}" class="row g-3 mb-3"></div>
+                    ` : ''}
+                    ${shorts.length > 0 ? `
+                        <h6 class="text-danger mb-2"><i class="fas fa-arrow-down"></i> Short Positions</h6>
+                        <div id="shortPositions-${trade.id}" class="row g-3 mb-3"></div>
+                    ` : ''}
+                    ${derivatives.length > 0 ? `
+                        <h6 class="text-info mb-2"><i class="fas fa-chart-area"></i> Derivatives</h6>
+                        <div id="derivatives-${trade.id}" class="row g-3"></div>
+                    ` : ''}
+                </div>
+            `;
+        }
+        
+        function initializeTradeCharts(trade, tradeId) {
+            const longs = trade.longs || [];
+            const shorts = trade.shorts || [];
+            const derivatives = trade.derivatives || [];
+            
+            // Display long positions with charts
+            if (longs.length > 0) {
+                const longContainer = document.getElementById(`longPositions-${tradeId}`);
+                if (longContainer) {
+                    displayPositionsWithCharts(longs, `longPositions-${tradeId}`, true);
+                }
+            }
+            
+            // Display short positions with charts
+            if (shorts.length > 0) {
+                const shortContainer = document.getElementById(`shortPositions-${tradeId}`);
+                if (shortContainer) {
+                    displayPositionsWithCharts(shorts, `shortPositions-${tradeId}`, false);
+                }
+            }
+            
+            // Display derivatives
+            if (derivatives.length > 0) {
+                const derivativesContainer = document.getElementById(`derivatives-${tradeId}`);
+                if (derivativesContainer) {
+                    displayPositionsWithCharts(derivatives, `derivatives-${tradeId}`, null);
+                }
             }
         }
         
