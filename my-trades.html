@@ -252,6 +252,7 @@
                 </div>
             </div>
 
+            <!-- Trade Summary Section -->
             <!-- AI Rationale -->
             <div class="card">
                 <div class="card-header">
@@ -262,7 +263,24 @@
                 </div>
             </div>
 
-<!-- Long Positions -->
+            <!-- Portfolio Metrics (inserted dynamically by JS after AI Rationale) -->
+
+            <!-- Return Estimates (moved here from below positions) -->
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="fas fa-chart-line me-2"></i>AI Return Estimates</h4>
+                </div>
+                <div class="card-body">
+                    <div id="returnGrid" class="return-grid"></div>
+                    <div id="returnRationale" class="mt-4" style="padding: 1.5rem; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 10px;">
+                        <h6 class="mb-3"><i class="fas fa-info-circle me-2"></i>Return Estimate Rationale</h6>
+                        <p id="returnRationaleText" class="mb-0 text-muted"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Positions Section -->
+            <!-- Long Positions -->
             <div id="longPositionsCard" class="card" style="display: none;">
                 <div class="card-header">
                     <h4 class="mb-0"><i class="fas fa-arrow-up me-2 text-success"></i>Long Positions</h4>
@@ -289,20 +307,6 @@
                 </div>
                 <div class="card-body">
                     <div id="derivativePositions"></div>
-                </div>
-            </div>
-
-            <!-- Return Estimates -->
-            <div class="card">
-                <div class="card-header">
-                    <h4 class="mb-0"><i class="fas fa-chart-line me-2"></i>AI Return Estimates</h4>
-                </div>
-                <div class="card-body">
-                    <div id="returnGrid" class="return-grid"></div>
-                    <div id="returnRationale" class="mt-4" style="padding: 1.5rem; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 10px;">
-                        <h6 class="mb-3"><i class="fas fa-info-circle me-2"></i>Return Estimate Rationale</h6>
-                        <p id="returnRationaleText" class="mb-0 text-muted"></p>
-                    </div>
                 </div>
             </div>
 
