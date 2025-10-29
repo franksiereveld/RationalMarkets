@@ -540,7 +540,10 @@
                 displayPositionsWithCharts(analysis.derivatives, 'derivativePositions', true);
             }
 
-            // Portfolio Metrics (Issue 4, 7, 8)
+            // AI rationale (moved BEFORE metrics per user request)
+            document.getElementById('aiRationale').textContent = analysis.aiRationale;
+            
+            // Portfolio Metrics (Issue 4, 7, 8) - now AFTER AI rationale
             if (analysis.portfolioMetrics) {
                 const metrics = analysis.portfolioMetrics;
                 let metricsHTML = `
@@ -588,15 +591,12 @@
                     </div>
                 `;
                 
-                // Insert before AI rationale
+                // Insert AFTER AI rationale
                 const rationaleCard = document.getElementById('aiRationale').closest('.card');
                 const metricsDiv = document.createElement('div');
                 metricsDiv.innerHTML = metricsHTML;
-                rationaleCard.parentNode.insertBefore(metricsDiv, rationaleCard);
+                rationaleCard.parentNode.insertBefore(metricsDiv, rationaleCard.nextSibling);
             }
-            
-            // AI rationale
-            document.getElementById('aiRationale').textContent = analysis.aiRationale;
         }
 
         function displayPositionsWithCharts(positions, containerId, isLong) {

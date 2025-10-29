@@ -136,7 +136,7 @@ def calculate_investment_breakdown(exposure_dict, investment_amount=1000, margin
         'short_dollars': round(short_dollars, 2),         # e.g., $350.00 (cash in)
         'short_margin': round(short_margin, 2),           # e.g., $175.00 (margin held)
         'net_capital_required': round(net_capital_required, 2),  # e.g., $825.00
-        'gross_exposure': round(gross_dollars, 2),        # e.g., $1350.00 (total positions)
+        'gross_exposure_dollars': round(gross_dollars, 2),  # e.g., $1350.00 (total positions in dollars)
         'calculation_steps': calculation_steps            # Detailed breakdown
     }
 
@@ -211,7 +211,7 @@ if __name__ == "__main__":
     print(f"  Gross: {metrics['gross_exposure']}%")
     print(f"\nFor $1000 Base Investment:")
     print(f"  Net capital required: ${metrics['net_capital_required']}")
-    print(f"  Gross exposure: ${metrics['gross_exposure']} (total positions)")
+    print(f"  Gross exposure: ${metrics['gross_exposure_dollars']} (total positions)")
     print(f"\n  Calculation breakdown:")
     for step in metrics['calculation_steps']:
         print(f"    • {step}")
