@@ -88,21 +88,21 @@
         }
         .return-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 1rem;
+            grid-template-columns: repeat(4, 1fr);  /* 4 columns side by side */
+            gap: 0.75rem;
             margin-bottom: 2rem;
         }
         .return-card {
             background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
             color: white;
-            padding: 1.5rem;
+            padding: 1rem;  /* Reduced from 1.5rem */
             border-radius: 10px;
             text-align: center;
         }
         .return-card h3 {
-            font-size: 2rem;
+            font-size: 1.5rem;  /* Reduced from 2rem */
             font-weight: bold;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.3rem;
         }
         .badge {
             font-size: 0.9rem;
@@ -500,7 +500,9 @@
                 card.setAttribute('data-bs-toggle', 'tooltip');
                 card.setAttribute('data-bs-placement', 'top');
                 card.setAttribute('title', rationale || 'Expected return for this time period');
-                card.innerHTML = `<h3>${value}</h3><p>${period}</p>`;
+                // Remove decimal points from percentages (3.5% → 4%, 25.0% → 25%)
+                const displayValue = value.replace(/\.\d+%/, '%').replace(/(\d+)%/, (match, num) => Math.round(parseFloat(num)) + '%');
+                card.innerHTML = `<h3>${displayValue}</h3><p>${period}</p>`;
                 returnGrid.appendChild(card);
                 
                 // Add to detailed rationale section
