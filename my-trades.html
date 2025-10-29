@@ -243,29 +243,29 @@
                 </div>
             </div>
 
-            <!-- Trade Summary Section -->
-            <!-- AI Rationale -->
+            <!-- Trade Statistics & Analysis Section (COMPREHENSIVE) -->
             <div class="card">
                 <div class="card-header">
-                    <h4 class="mb-0"><i class="fas fa-brain me-2"></i>AI Analysis & Rationale</h4>
+                    <h4 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Trade Statistics & Analysis</h4>
                 </div>
                 <div class="card-body">
-                    <p id="aiRationale" class="mb-0"></p>
-                </div>
-            </div>
+                    <!-- AI Rationale (FIRST - Most Important) -->
+                    <div class="mb-4 p-3" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; color: white;">
+                        <h5 class="mb-3"><i class="fas fa-brain me-2"></i>AI Analysis & Rationale</h5>
+                        <p id="aiRationale" class="mb-0" style="font-size: 1.05rem; line-height: 1.6;"></p>
+                    </div>
 
-            <!-- Portfolio Metrics (inserted dynamically by JS after AI Rationale) -->
+                    <!-- Portfolio Metrics Container (will be populated by JS) -->
+                    <div id="portfolioMetricsContainer" class="mb-4"></div>
 
-            <!-- Return Estimates (moved here from below positions) -->
-            <div class="card">
-                <div class="card-header">
-                    <h4 class="mb-0"><i class="fas fa-chart-line me-2"></i>AI Return Estimates</h4>
-                </div>
-                <div class="card-body">
-                    <div id="returnGrid" class="return-grid"></div>
-                    <div id="returnRationale" class="mt-4" style="padding: 1.5rem; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 10px;">
-                        <h6 class="mb-3"><i class="fas fa-info-circle me-2"></i>Return Estimate Rationale</h6>
-                        <p id="returnRationaleText" class="mb-0 text-muted"></p>
+                    <!-- Return Estimates with Rationales -->
+                    <div class="mb-4">
+                        <h5 class="mb-3"><i class="fas fa-chart-line me-2"></i>Expected Returns</h5>
+                        <div id="returnGrid" class="return-grid mb-3"></div>
+                        <div id="returnRationale" class="mt-3" style="padding: 1.5rem; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 10px;">
+                            <h6 class="mb-3"><i class="fas fa-info-circle me-2"></i>Return Estimate Rationales</h6>
+                            <div id="returnRationaleText" class="mb-0"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -594,41 +594,41 @@
             // AI rationale (moved BEFORE metrics per user request)
             document.getElementById('aiRationale').textContent = analysis.aiRationale;
             
-            // Portfolio Metrics (Issue 4, 7, 8) - now AFTER AI rationale
+            // Portfolio Metrics - now in dedicated container
             if (analysis.portfolioMetrics) {
                 const metrics = analysis.portfolioMetrics;
                 let metricsHTML = `
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-3">
-                            <div class="p-3 bg-light rounded text-center">
-                                <div class="text-muted small">Portfolio Beta</div>
-                                <div class="fw-bold fs-4">${metrics.portfolio_beta || 'N/A'}</div>
+                    <h5 class="mb-3"><i class="fas fa-wallet me-2"></i>Investment Required & Portfolio Metrics</h5>
+                    
+                    <!-- Investment Breakdown -->
+                    <div class="p-3 mb-3" style="background: #f8f9fa; border-radius: 10px; border-left: 4px solid #667eea;">
+                        <h6 class="mb-3">Investment Breakdown</h6>
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-4">
+                                <div class="p-2 bg-white rounded">
+                                    <div class="text-muted small">Long Positions</div>
+                                    <div class="fw-bold text-success">${metrics.long_exposure || 'N/A'}%</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="p-2 bg-white rounded">
+                                    <div class="text-muted small">Short Positions</div>
+                                    <div class="fw-bold text-danger">${metrics.short_exposure || 'N/A'}%</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="p-2 bg-white rounded" style="border: 2px solid #667eea;">
+                                    <div class="text-muted small">Net Investment</div>
+                                    <div class="fw-bold text-primary">${metrics.net_exposure || 'N/A'}%</div>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-md-3">
-                            <div class="p-3 bg-light rounded text-center">
-                                <div class="text-muted small">Alpha</div>
-                                <div class="fw-bold fs-4">${analysis.alpha || metrics.alpha || 'N/A'}%</div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="p-3 bg-light rounded text-center">
-                                <div class="text-muted small">Net Exposure</div>
-                                <div class="fw-bold fs-4">${metrics.net_exposure || 'N/A'}%</div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="p-3 bg-light rounded text-center">
-                                <div class="text-muted small">Gross Exposure</div>
-                                <div class="fw-bold fs-4">${metrics.gross_exposure || 'N/A'}%</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="p-3 bg-white rounded border">
-                        <h6 class="mb-2">For $1000 Investment:</h6>
-                        <div class="mb-2"><strong>Net Capital Required:</strong> $${metrics.net_capital_required || 'N/A'}</div>
-                        <div class="text-muted small">
-                            <div class="mb-1"><strong>Calculation:</strong></div>
+                        
+                        <div class="p-3 bg-white rounded border">
+                            <h6 class="mb-2">For $1,000 Investment:</h6>
+                            <div class="mb-2"><strong>Net Capital Required:</strong> <span class="text-primary fs-5">$${metrics.net_capital_required || 'N/A'}</span></div>
+                            <div class="text-muted small">
+                                <div class="mb-1"><strong>Calculation:</strong></div>
                 `;
                 
                 if (metrics.calculation_steps && Array.isArray(metrics.calculation_steps)) {
@@ -638,15 +638,41 @@
                 }
                 
                 metricsHTML += `
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Portfolio Metrics Grid -->
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <div class="p-3 text-center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; color: white;">
+                                <div class="small mb-1">Portfolio Beta</div>
+                                <div class="fw-bold fs-4">${metrics.portfolio_beta || 'N/A'}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3 text-center" style="background: linear-gradient(135deg, #4caf50 0%, #45a049 100%); border-radius: 10px; color: white;">
+                                <div class="small mb-1">Alpha</div>
+                                <div class="fw-bold fs-4">${analysis.alpha || metrics.alpha || 'N/A'}%</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3 text-center" style="background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); border-radius: 10px; color: white;">
+                                <div class="small mb-1">Net Exposure</div>
+                                <div class="fw-bold fs-4">${metrics.net_exposure || 'N/A'}%</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3 text-center" style="background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%); border-radius: 10px; color: white;">
+                                <div class="small mb-1">Gross Exposure</div>
+                                <div class="fw-bold fs-4">${metrics.gross_exposure || 'N/A'}%</div>
+                            </div>
                         </div>
                     </div>
                 `;
                 
-                // Insert AFTER AI rationale
-                const rationaleCard = document.getElementById('aiRationale').closest('.card');
-                const metricsDiv = document.createElement('div');
-                metricsDiv.innerHTML = metricsHTML;
-                rationaleCard.parentNode.insertBefore(metricsDiv, rationaleCard.nextSibling);
+                // Insert into dedicated container
+                document.getElementById('portfolioMetricsContainer').innerHTML = metricsHTML;
             }
         }
 
