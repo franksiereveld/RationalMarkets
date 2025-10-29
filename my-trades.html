@@ -163,8 +163,8 @@
     <script src="auth-check.js"></script>
 </head>
 <body data-require-auth="true">
-                    <a href="index.html" class="btn btn-outline-light position-absolute" style="top: 20px; left: 20px;">
-        <i class="fas fa-arrow-left me-2"></i>Back to Home
+    <a href="index.html" class="btn btn-outline-light position-absolute" style="top: 20px; left: 20px; z-index: 1000;">
+        <i class="fas fa-arrow-left"></i><span class="d-none d-md-inline ms-2">Back to Home</span>
     </a>
 
     <div class="main-container">
@@ -228,9 +228,12 @@
 
         <!-- Past Trades Section -->
         <div id="pastTradesSection" class="card mb-4" style="display: none;">
-            <div class="card-header d-flex justify-content-between align-items-center">
+            <div class="card-header d-flex justify-content-between align-items-center" style="cursor: pointer;" onclick="togglePastTrades()">
                 <h3 class="mb-0"><i class="fas fa-history me-2"></i>Your Past Trades</h3>
-                <span id="tradesCount" class="badge bg-primary">0</span>
+                <div>
+                    <span id="tradesCount" class="badge bg-primary me-2">0</span>
+                    <i id="toggleIcon" class="fas fa-chevron-down"></i>
+                </div>
             </div>
             <div class="card-body">
                 <div id="pastTradesLoading" class="text-center py-4">
@@ -1121,6 +1124,20 @@
             resetForm();
         }
 
+        // Toggle Past Trades visibility
+        function togglePastTrades() {
+            const list = document.getElementById('pastTradesList');
+            const icon = document.getElementById('toggleIcon');
+            
+            if (list.style.display === 'none') {
+                list.style.display = 'block';
+                icon.className = 'fas fa-chevron-up';
+            } else {
+                list.style.display = 'none';
+                icon.className = 'fas fa-chevron-down';
+            }
+        }
+        
         // Load past trades on page load
         async function loadPastTrades() {
             const token = localStorage.getItem('authToken');
@@ -1222,18 +1239,14 @@
             if (pastTrades.length > 0) {
                 pastTradesSection.style.display = 'block';
                 document.getElementById('tradesCount').textContent = pastTrades.length;
-                document.getElementById('pastTradesList').style.display = 'block';
+                // Start collapsed, user can click to expand
+                document.getElementById('pastTradesList').style.display = 'none';
                 document.getElementById('pastTradesEmpty').style.display = 'none';
             } else {
-                // If no past trades, hide the section or show empty state
-                if (!currentTrade) {
-                    pastTradesSection.style.display = 'block';
-                    document.getElementById('pastTradesEmpty').style.display = 'block';
-                    document.getElementById('pastTradesList').style.display = 'none';
-                } else {
-                    // Has current trade but no past trades - hide past trades section
-                    pastTradesSection.style.display = 'none';
-                }
+                // If no past trades, show empty state
+                pastTradesSection.style.display = 'block';
+                document.getElementById('pastTradesEmpty').style.display = 'block';
+                document.getElementById('pastTradesList').style.display = 'none';
             }
             
             pastTrades.forEach(trade => {
