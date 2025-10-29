@@ -69,6 +69,7 @@ def verify_code():
         data = request.get_json()
         phone_number = data.get('phoneNumber', '').strip()
         code = data.get('code', '').strip()
+        full_name = data.get('fullName', '').strip() or None
         
         if not phone_number or not code:
             return jsonify({
@@ -76,7 +77,7 @@ def verify_code():
                 'message': 'Phone number and code are required'
             }), 400
         
-        result = auth_service.verify_code(phone_number, code)
+        result = auth_service.verify_code(phone_number, code, full_name)
         
         if result['success']:
             return jsonify(result), 200

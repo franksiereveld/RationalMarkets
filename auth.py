@@ -96,13 +96,14 @@ class AuthService:
                 'message': f'Failed to send verification code: {str(e)}'
             }
     
-    def verify_code(self, phone_number, code):
+    def verify_code(self, phone_number, code, full_name=None):
         """
         Verify the code for phone number using Twilio Verify API
         
         Args:
             phone_number: Phone number in E.164 format
             code: Verification code to check
+            full_name: Optional full name for new user signup
         
         Returns:
             Dict with success status, JWT token, and user data
@@ -144,6 +145,7 @@ class AuthService:
                     # Create new user
                     user = User(
                         phone_number=phone_number,
+                        full_name=full_name,
                         is_verified=True,
                         last_login=datetime.utcnow()
                     )
