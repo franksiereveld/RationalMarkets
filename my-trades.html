@@ -815,7 +815,7 @@
             // Initialize TradingView widget
             new TradingView.widget({
                 "autosize": true,
-                "symbol": `NASDAQ:${symbol}`,
+                "symbol": symbol,  // Let TradingView auto-detect the exchange
                 "interval": "D",
                 "timezone": "Etc/UTC",
                 "theme": "light",
