@@ -290,9 +290,10 @@ def get_user_trades():
             user_id = user_id_str
         
         with DatabaseSession() as session:
-            # Eagerly load positions and their securities to avoid lazy loading issues
+            # Eagerly load positions, securities, and user to avoid lazy loading issues
             trades = session.query(Trade).options(
-                joinedload(Trade.positions).joinedload(Position.security)
+                joinedload(Trade.positions).joinedload(Position.security),
+                joinedload(Trade.user)
             ).filter_by(
                 user_id=user_id
             ).order_by(Trade.created_at.desc()).all()
@@ -320,8 +321,13 @@ def get_user_trades():
 def get_trade(trade_id):
     """Get a specific trade by ID"""
     try:
+        from sqlalchemy.orm import joinedload
+        
         with DatabaseSession() as session:
-            trade = session.query(Trade).filter_by(
+            trade = session.query(Trade).options(
+                joinedload(Trade.positions).joinedload(Position.security),
+                joinedload(Trade.user)
+            ).filter_by(
                 id=trade_id,
                 user_id=request.user['id']
             ).first()

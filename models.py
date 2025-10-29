@@ -174,9 +174,20 @@ class Trade(Base):
         return f"<Trade {self.trade_name}>"
     
     def to_dict(self, include_positions=True):
+        # Get owner name from user relationship
+        owner_name = None
+        try:
+            if self.user:
+                # Prefer full_name, fallback to phone_number
+                owner_name = self.user.full_name or self.user.phone_number
+        except Exception:
+            # User relationship not loaded
+            pass
+        
         result = {
             'id': str(self.id),
             'user_id': str(self.user_id),
+            'owner': owner_name,
             'trade_name': self.trade_name,
             'trade_description': self.trade_description,
             'status': self.status,
