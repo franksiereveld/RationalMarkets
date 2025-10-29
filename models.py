@@ -428,3 +428,55 @@ class BrokerConnection(Base):
         UniqueConstraint('user_id', 'broker', 'broker_account_id', name='uq_user_broker_account'),
     )
 
+
+
+class Investment(Base):
+    """Paper trading investments - tracks user's allocated amounts to trades"""
+    __tablename__ = 'investments'
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    trade_id = Column(UUID(as_uuid=True), ForeignKey('trades.id', ondelete='CASCADE'), nullable=False, index=True)
+    
+    # Investment details
+    amount = Column(Numeric(20, 2), nullable=False)
+    currency = Column(String(10), default='USD', nullable=False)
+    
+    # Investment type (for future real broker integration)
+    investment_type = Column(String(50), default='paper', nullable=False)  # 'paper' or 'real'
+    
+    # Status
+    status = Column(String(50), default='active', index=True)  # 'active', 'closed', 'cancelled'
+    
+    # Timestamps
+    invested_at = Column(DateTime, nullable=False, default=datetime.utcnow, index=True)
+    closed_at = Column(DateTime)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    user = relationship("User")
+    trade = relationship("Trade")
+    
+    __table_args__ = (
+        CheckConstraint('amount > 0', name='valid_investment_amount'),
+        Index('idx_user_status', 'user_id', 'status'),
+    )
+    
+    def __repr__(self):
+        return f"<Investment {self.amount} {self.currency} in trade {self.trade_id}>"
+    
+    def to_dict(self):
+        return {
+            'id': str(self.id),
+            'user_id': str(self.user_id),
+            'trade_id': str(self.trade_id),
+            'amount': float(self.amount),
+            'currency': self.currency,
+            'investment_type': self.investment_type,
+            'status': self.status,
+            'invested_at': self.invested_at.isoformat() if self.invested_at else None,
+            'closed_at': self.closed_at.isoformat() if self.closed_at else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+

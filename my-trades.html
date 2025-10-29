@@ -1243,11 +1243,13 @@
         }
         
         function createTradeCard(trade) {
-            const date = new Date(trade.createdAt).toLocaleDateString('en-US', {
+            // Handle both createdAt (camelCase) and created_at (snake_case) from API
+            const dateString = trade.created_at || trade.createdAt;
+            const date = dateString ? new Date(dateString).toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'short',
                 day: 'numeric'
-            });
+            }) : 'N/A';
             
             const sentiment = trade.sentiment || 'NEUTRAL';
             const riskLevel = trade.riskLevel || 'UNKNOWN';
@@ -1330,7 +1332,7 @@
                         
                         <!-- Action Buttons -->
                         <div class="d-flex gap-2">
-                            <button class="btn btn-primary" onclick="event.stopPropagation(); alert('Invest feature coming soon!')" style="border-radius: 10px; padding: 0.5rem 1.5rem;">
+                            <button class="btn btn-primary" onclick="event.stopPropagation(); investInTrade('${trade.id}', '${escapeHtml(trade.trade_name)}')" style="border-radius: 10px; padding: 0.5rem 1.5rem;">
                                 <i class="fas fa-plus"></i> Invest
                             </button>
                             <button class="btn btn-outline-primary" onclick="event.stopPropagation(); viewTradeDetails('${trade.id}')" style="border-radius: 10px; padding: 0.5rem 1.5rem;">
@@ -1347,6 +1349,103 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+        
+        // Global variable to store current trade ID for investment
+        let currentInvestTradeId = null;
+        let currentInvestTradeName = null;
+        
+        function investInTrade(tradeId, tradeName) {
+            // Store trade info
+            currentInvestTradeId = tradeId;
+            currentInvestTradeName = tradeName;
+            
+            // Set trade name in modal
+            document.getElementById('investTradeName').textContent = tradeName;
+            
+            // Set default date to today
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('investDate').value = today;
+            
+            // Clear previous values
+            document.getElementById('investAmount').value = '';
+            document.getElementById('investCurrency').value = 'USD';
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('investModal'));
+            modal.show();
+        }
+        
+        async function saveInvestment() {
+            const amount = document.getElementById('investAmount').value;
+            const currency = document.getElementById('investCurrency').value;
+            const date = document.getElementById('investDate').value;
+            
+            // Validate
+            if (!amount || parseFloat(amount) <= 0) {
+                alert('Please enter a valid amount');
+                return;
+            }
+            
+            if (!date) {
+                alert('Please select an investment date');
+                return;
+            }
+            
+            // Get auth token
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                alert('Please log in to invest in trades');
+                window.location.href = '/auth.html';
+                return;
+            }
+            
+            try {
+                // Show loading state
+                const saveBtn = event.target;
+                const originalText = saveBtn.innerHTML;
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+                
+                // Create investment
+                const response = await fetch('/api/investments', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        trade_id: currentInvestTradeId,
+                        amount: parseFloat(amount),
+                        currency: currency,
+                        invested_at: new Date(date).toISOString()
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Close modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('investModal'));
+                    modal.hide();
+                    
+                    // Show success message
+                    alert(`Successfully invested ${currency} ${parseFloat(amount).toLocaleString()} in ${currentInvestTradeName}!`);
+                    
+                    // Reload trades to show updated state
+                    loadPastTrades();
+                } else {
+                    alert(`Failed to save investment: ${data.message}`);
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = originalText;
+                }
+            } catch (error) {
+                console.error('Error saving investment:', error);
+                alert('Failed to save investment. Please try again.');
+                const saveBtn = event.target;
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="fas fa-check"></i> Save Investment';
+            }
         }
         
         async function viewTradeDetails(tradeId) {
@@ -1480,5 +1579,68 @@
     });
 })();
 </script>
+
+<!-- Invest Modal -->
+<div class="modal fade" id="investModal" tabindex="-1" aria-labelledby="investModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 15px; border: none;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 15px 15px 0 0;">
+                <h5 class="modal-title" id="investModalLabel">
+                    <i class="fas fa-coins"></i> Invest in Trade
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="padding: 2rem;">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Trade</label>
+                    <div id="investTradeName" class="text-muted"></div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="investCurrency" class="form-label fw-bold">Currency</label>
+                    <select id="investCurrency" class="form-select" style="border-radius: 10px;">
+                        <option value="USD">$ USD</option>
+                        <option value="EUR">€ EUR</option>
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="investAmount" class="form-label fw-bold">Amount</label>
+                    <input type="number" 
+                           id="investAmount" 
+                           class="form-control" 
+                           placeholder="e.g., 10000" 
+                           min="1" 
+                           step="0.01"
+                           style="border-radius: 10px; padding: 0.75rem;">
+                    <div class="form-text">Enter the amount you want to allocate to this trade (paper trading)</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="investDate" class="form-label fw-bold">Investment Date</label>
+                    <input type="date" 
+                           id="investDate" 
+                           class="form-control" 
+                           style="border-radius: 10px; padding: 0.75rem;">
+                    <div class="form-text">Date when you want to start tracking this investment</div>
+                </div>
+                
+                <div class="alert alert-info" style="border-radius: 10px; border: none; background: #e7f3ff;">
+                    <i class="fas fa-info-circle"></i> 
+                    <strong>Paper Trading:</strong> This is imaginary money for educational purposes. No real money will be invested.
+                </div>
+            </div>
+            <div class="modal-footer" style="border: none; padding: 1rem 2rem 2rem 2rem;">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius: 10px; padding: 0.5rem 1.5rem;">
+                    Cancel
+                </button>
+                <button type="button" class="btn btn-primary" onclick="saveInvestment()" style="border-radius: 10px; padding: 0.5rem 1.5rem;">
+                    <i class="fas fa-check"></i> Save Investment
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>

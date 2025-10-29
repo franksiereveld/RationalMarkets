@@ -16,7 +16,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from trade_analyzer import analyze_trade_with_ai
 from auth import get_auth_service, require_auth, optional_auth
 from database import init_database, DatabaseSession
-from models import User, Trade, Position, Security
+from models import User, Trade, Position, Security, Investment
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -385,6 +385,174 @@ def delete_trade(trade_id):
             'message': 'Failed to delete trade'
         }), 500
 
+
+# ============================================================================
+# INVESTMENT ENDPOINTS
+# ============================================================================
+
+@app.route('/api/investments', methods=['POST'])
+@require_auth
+def create_investment():
+    """Create a new paper trading investment"""
+    try:
+        from uuid import UUID
+        
+        data = request.get_json()
+        trade_id = data.get('trade_id')
+        amount = data.get('amount')
+        currency = data.get('currency', 'USD')
+        invested_at = data.get('invested_at')  # Optional, defaults to now
+        
+        if not trade_id or not amount:
+            return jsonify({
+                'success': False,
+                'message': 'Trade ID and amount are required'
+            }), 400
+        
+        # Validate amount
+        try:
+            amount = float(amount)
+            if amount <= 0:
+                raise ValueError("Amount must be positive")
+        except (ValueError, TypeError):
+            return jsonify({
+                'success': False,
+                'message': 'Invalid amount'
+            }), 400
+        
+        # Convert user_id to UUID
+        user_id_str = request.user['id']
+        if isinstance(user_id_str, str):
+            user_id = UUID(user_id_str)
+        else:
+            user_id = user_id_str
+        
+        with DatabaseSession() as session:
+            # Verify trade exists and belongs to user
+            trade = session.query(Trade).filter_by(
+                id=trade_id,
+                user_id=user_id
+            ).first()
+            
+            if not trade:
+                return jsonify({
+                    'success': False,
+                    'message': 'Trade not found'
+                }), 404
+            
+            # Create investment
+            investment = Investment(
+                user_id=user_id,
+                trade_id=trade_id,
+                amount=amount,
+                currency=currency,
+                invested_at=datetime.fromisoformat(invested_at) if invested_at else datetime.utcnow()
+            )
+            
+            session.add(investment)
+            session.commit()
+            
+            investment_data = investment.to_dict()
+        
+        return jsonify({
+            'success': True,
+            'investment': investment_data
+        }), 201
+    
+    except Exception as e:
+        print(f"Error creating investment: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'message': f'Failed to create investment: {str(e)}'
+        }), 500
+
+
+@app.route('/api/investments', methods=['GET'])
+@require_auth
+def get_user_investments():
+    """Get all investments for authenticated user"""
+    try:
+        from sqlalchemy.orm import joinedload
+        from uuid import UUID
+        
+        # Convert user_id to UUID
+        user_id_str = request.user['id']
+        if isinstance(user_id_str, str):
+            user_id = UUID(user_id_str)
+        else:
+            user_id = user_id_str
+        
+        with DatabaseSession() as session:
+            # Eagerly load trade and positions
+            investments = session.query(Investment).options(
+                joinedload(Investment.trade).joinedload(Trade.positions).joinedload(Position.security)
+            ).filter_by(
+                user_id=user_id,
+                status='active'
+            ).order_by(Investment.invested_at.desc()).all()
+            
+            # Convert to dict with trade details
+            investments_data = []
+            for inv in investments:
+                inv_dict = inv.to_dict()
+                if inv.trade:
+                    inv_dict['trade'] = inv.trade.to_dict()
+                investments_data.append(inv_dict)
+        
+        return jsonify({
+            'success': True,
+            'investments': investments_data
+        }), 200
+    
+    except Exception as e:
+        print(f"Error getting investments: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'message': f'Failed to fetch investments: {str(e)}'
+        }), 500
+
+
+@app.route('/api/investments/<investment_id>', methods=['DELETE'])
+@require_auth
+def close_investment(investment_id):
+    """Close an investment (mark as closed)"""
+    try:
+        with DatabaseSession() as session:
+            investment = session.query(Investment).filter_by(
+                id=investment_id,
+                user_id=request.user['id']
+            ).first()
+            
+            if not investment:
+                return jsonify({
+                    'success': False,
+                    'message': 'Investment not found'
+                }), 404
+            
+            investment.status = 'closed'
+            investment.closed_at = datetime.utcnow()
+            session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Investment closed successfully'
+        }), 200
+    
+    except Exception as e:
+        print(f"Error closing investment: {e}")
+        return jsonify({
+            'success': False,
+            'message': 'Failed to close investment'
+        }), 500
+
+
+# ============================================================================
+# USER STATS
+# ============================================================================
 
 @app.route('/api/user/stats', methods=['GET'])
 @require_auth
