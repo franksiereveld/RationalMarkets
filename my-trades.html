@@ -201,6 +201,18 @@
                 </button>
             </div>
         </div>
+        <!-- Current Trade Section (most recent) -->
+        <div id="currentTradeSection" class="card mb-4" style="display: none;">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="mb-0"><i class="fas fa-star me-2 text-warning"></i>Current Trade</h3>
+            </div>
+            <div class="card-body">
+                <div id="currentTradeCard" class="row">
+                    <!-- Current trade card will be inserted here -->
+                </div>
+            </div>
+        </div>
+
         <!-- Past Trades Section -->
         <div id="pastTradesSection" class="card mb-4" style="display: none;">
             <div class="card-header d-flex justify-content-between align-items-center">
@@ -1156,140 +1168,181 @@
         }
         
         function displayPastTrades(trades) {
+            const currentTradeSection = document.getElementById('currentTradeSection');
+            const currentTradeCard = document.getElementById('currentTradeCard');
+            const pastTradesSection = document.getElementById('pastTradesSection');
             const list = document.getElementById('pastTradesList');
+            
             list.innerHTML = '';
+            currentTradeCard.innerHTML = '';
             
             // Sort by date, newest first
             trades.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
             
-            trades.forEach(trade => {
-                const date = new Date(trade.createdAt).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric'
-                });
-                
-                const sentiment = trade.sentiment || 'NEUTRAL';
-                const riskLevel = trade.riskLevel || 'UNKNOWN';
-                
-                // Sentiment badge colors
-                const sentimentColor = {
-                    'BULLISH': 'success',
-                    'BEARISH': 'danger',
-                    'NEUTRAL': 'secondary'
-                }[sentiment] || 'secondary';
-                
-                // Risk badge colors
-                const riskColor = {
-                    'LOW': 'success',
-                    'MODERATE': 'warning',
-                    'HIGH': 'danger',
-                    'VERY HIGH': 'danger',
-                    'UNKNOWN': 'secondary'
-                }[riskLevel] || 'secondary';
-                
-                // Get return estimates (use new periods: 1M, 6M, 1Y, 3Y)
-                const returns = trade.returnEstimates || {};
-                const return1M = returns['1M'] || 'N/A';
-                const return6M = returns['6M'] || returns['3M'] || 'N/A';  // Fallback to 3M if 6M not available
-                const return1Y = returns['1Y'] || returns['6M'] || 'N/A';  // Fallback to old 6M if 1Y not available
-                const return3Y = returns['3Y'] || returns['1Y'] || 'N/A';  // Fallback to old 1Y if 3Y not available
-                
-                // Get position tickers
-                const longs = trade.longs || [];
-                const shorts = trade.shorts || [];
-                const longTickers = longs.map(p => p.ticker).slice(0, 4);  // Show max 4
-                const shortTickers = shorts.map(p => p.ticker).slice(0, 4);
-                
-                // Mock data for now (will come from backend later)
-                const rating = 4.5;
-                const investors = 342;
-                
-                const card = document.createElement('div');
-                card.className = 'col-12 mb-3';
-                card.innerHTML = `
-                    <div class="card trade-card-detailed" style="border-radius: 15px; overflow: hidden;">
-                        <div class="card-body p-4">
-                            <!-- Header -->
-                            <div class="d-flex justify-content-between align-items-start mb-3">
-                                <div>
-                                    <h5 class="mb-1" style="font-weight: 600;">${escapeHtml(trade.trade_name || trade.name || 'Untitled Trade')}</h5>
-                                    <p class="text-muted small mb-0">by ${escapeHtml(trade.owner || 'Anonymous')} • ${date}</p>
-                                </div>
-                            </div>
-                            
-                            <!-- Badges -->
-                            <div class="d-flex gap-2 mb-3 flex-wrap">
-                                <span class="badge" style="background-color: ${sentimentColor === 'success' ? '#d4edda' : sentimentColor === 'danger' ? '#f8d7da' : '#e2e3e5'}; color: ${sentimentColor === 'success' ? '#155724' : sentimentColor === 'danger' ? '#721c24' : '#383d41'}; padding: 0.5rem 1rem; border-radius: 20px; font-weight: 600;">${sentiment}</span>
-                                <span class="badge" style="background-color: ${riskColor === 'success' ? '#d4edda' : riskColor === 'warning' ? '#fff3cd' : '#f8d7da'}; color: ${riskColor === 'success' ? '#155724' : riskColor === 'warning' ? '#856404' : '#721c24'}; padding: 0.5rem 1rem; border-radius: 20px; font-weight: 600;">${riskLevel} RISK</span>
-                                <span class="text-warning" style="font-size: 1.1rem;">
-                                    ${'★'.repeat(Math.floor(rating))}${'☆'.repeat(5 - Math.floor(rating))} ${rating}
-                                </span>
-                                <span class="text-muted">
-                                    <i class="fas fa-users"></i> ${investors} investors
-                                </span>
-                            </div>
-                            
-                            <!-- Return Estimates Grid -->
-                            <div class="row g-3 mb-3">
-                                <div class="col-3">
-                                    <div class="text-center">
-                                        <div class="text-muted small">1M</div>
-                                        <div class="fw-bold" style="font-size: 1.2rem; color: ${return1M.startsWith('-') ? '#dc3545' : '#28a745'};">${return1M}</div>
-                                    </div>
-                                </div>
-                                <div class="col-3">
-                                    <div class="text-center">
-                                        <div class="text-muted small">6M</div>
-                                        <div class="fw-bold" style="font-size: 1.2rem; color: ${return6M.startsWith('-') ? '#dc3545' : '#28a745'};">${return6M}</div>
-                                    </div>
-                                </div>
-                                <div class="col-3">
-                                    <div class="text-center">
-                                        <div class="text-muted small">1Y</div>
-                                        <div class="fw-bold" style="font-size: 1.2rem; color: ${return1Y.startsWith('-') ? '#dc3545' : '#28a745'};">${return1Y}</div>
-                                    </div>
-                                </div>
-                                <div class="col-3">
-                                    <div class="text-center">
-                                        <div class="text-muted small">3Y</div>
-                                        <div class="fw-bold" style="font-size: 1.2rem; color: ${return3Y.startsWith('-') ? '#dc3545' : '#28a745'};">${return3Y}</div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Position Tickers -->
-                            <div class="mb-3">
-                                ${longTickers.length > 0 ? `
-                                <div class="mb-2">
-                                    <span class="text-success me-2"><i class="fas fa-arrow-up"></i> Long:</span>
-                                    ${longTickers.map(t => `<span class="badge bg-success bg-opacity-25 text-success me-1" style="padding: 0.4rem 0.8rem;">${t}</span>`).join('')}
-                                    ${longs.length > 4 ? `<span class="text-muted small">+${longs.length - 4} more</span>` : ''}
-                                </div>
-                                ` : ''}
-                                ${shortTickers.length > 0 ? `
-                                <div>
-                                    <span class="text-danger me-2"><i class="fas fa-arrow-down"></i> Short:</span>
-                                    ${shortTickers.map(t => `<span class="badge bg-danger bg-opacity-25 text-danger me-1" style="padding: 0.4rem 0.8rem;">${t}</span>`).join('')}
-                                    ${shorts.length > 4 ? `<span class="text-muted small">+${shorts.length - 4} more</span>` : ''}
-                                </div>
-                                ` : ''}
-                            </div>
-                            
-                            <!-- Action Buttons -->
-                            <div class="d-flex gap-2">
-                                <button class="btn btn-primary" onclick="event.stopPropagation(); alert('Invest feature coming soon!')" style="border-radius: 10px; padding: 0.5rem 1.5rem;">
-                                    <i class="fas fa-plus"></i> Invest
-                                </button>
-                                <button class="btn btn-outline-primary" onclick="event.stopPropagation(); viewTradeDetails(${trade.id})" style="border-radius: 10px; padding: 0.5rem 1.5rem;">
-                                    <i class="fas fa-eye"></i> View Details
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `;
+            // Separate current trade (newest) from past trades
+            const currentTrade = trades[0];
+            const pastTrades = trades.slice(1);
+            
+            // Display current trade
+            if (currentTrade) {
+                currentTradeSection.style.display = 'block';
+                const card = createTradeCard(currentTrade);
+                currentTradeCard.appendChild(card);
+            } else {
+                currentTradeSection.style.display = 'none';
+            }
+            
+            // Display past trades
+            if (pastTrades.length > 0) {
+                pastTradesSection.style.display = 'block';
+                document.getElementById('tradesCount').textContent = pastTrades.length;
+                document.getElementById('pastTradesList').style.display = 'block';
+                document.getElementById('pastTradesEmpty').style.display = 'none';
+            } else {
+                // If no past trades, hide the section or show empty state
+                if (!currentTrade) {
+                    pastTradesSection.style.display = 'block';
+                    document.getElementById('pastTradesEmpty').style.display = 'block';
+                    document.getElementById('pastTradesList').style.display = 'none';
+                } else {
+                    // Has current trade but no past trades - hide past trades section
+                    pastTradesSection.style.display = 'none';
+                }
+            }
+            
+            pastTrades.forEach(trade => {
+                const card = createTradeCard(trade);
                 list.appendChild(card);
             });
+        }
+        
+        function createTradeCard(trade) {
+            const date = new Date(trade.createdAt).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+            
+            const sentiment = trade.sentiment || 'NEUTRAL';
+            const riskLevel = trade.riskLevel || 'UNKNOWN';
+            
+            // Sentiment badge colors
+            const sentimentColor = {
+                'BULLISH': 'success',
+                'BEARISH': 'danger',
+                'NEUTRAL': 'secondary'
+            }[sentiment] || 'secondary';
+            
+            // Risk badge colors
+            const riskColor = {
+                'LOW': 'success',
+                'MODERATE': 'warning',
+                'HIGH': 'danger',
+                'VERY HIGH': 'danger',
+                'UNKNOWN': 'secondary'
+            }[riskLevel] || 'secondary';
+            
+            // Get return estimates (use new periods: 1M, 6M, 1Y, 3Y)
+            const returns = trade.returnEstimates || {};
+            const return1M = returns['1M'] || 'N/A';
+            const return6M = returns['6M'] || returns['3M'] || 'N/A';
+            const return1Y = returns['1Y'] || returns['6M'] || 'N/A';
+            const return3Y = returns['3Y'] || returns['1Y'] || 'N/A';
+            
+            // Get position tickers
+            const longs = trade.longs || [];
+            const shorts = trade.shorts || [];
+            const longTickers = longs.map(p => p.ticker).slice(0, 4);
+            const shortTickers = shorts.map(p => p.ticker).slice(0, 4);
+            
+            // Mock data for now
+            const rating = 4.5;
+            const investors = 342;
+            
+            const card = document.createElement('div');
+            card.className = 'col-12 mb-3';
+            card.innerHTML = `
+                <div class="card trade-card-detailed" style="border-radius: 15px; overflow: hidden;">
+                    <div class="card-body p-4">
+                        <!-- Header -->
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h5 class="mb-1" style="font-weight: 600;">${escapeHtml(trade.trade_name || trade.name || 'Untitled Trade')}</h5>
+                                <p class="text-muted small mb-0">by ${escapeHtml(trade.owner || 'Anonymous')} • ${date}</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Badges -->
+                        <div class="d-flex gap-2 mb-3 flex-wrap">
+                            <span class="badge" style="background-color: ${sentimentColor === 'success' ? '#d4edda' : sentimentColor === 'danger' ? '#f8d7da' : '#e2e3e5'}; color: ${sentimentColor === 'success' ? '#155724' : sentimentColor === 'danger' ? '#721c24' : '#383d41'}; padding: 0.5rem 1rem; border-radius: 20px; font-weight: 600;">${sentiment}</span>
+                            <span class="badge" style="background-color: ${riskColor === 'success' ? '#d4edda' : riskColor === 'warning' ? '#fff3cd' : '#f8d7da'}; color: ${riskColor === 'success' ? '#155724' : riskColor === 'warning' ? '#856404' : '#721c24'}; padding: 0.5rem 1rem; border-radius: 20px; font-weight: 600;">${riskLevel} RISK</span>
+                            <span class="text-warning" style="font-size: 1.1rem;">
+                                ${'★'.repeat(Math.floor(rating))}${'☆'.repeat(5 - Math.floor(rating))} ${rating}
+                            </span>
+                            <span class="text-muted">
+                                <i class="fas fa-users"></i> ${investors} investors
+                            </span>
+                        </div>
+                        
+                        <!-- Return Estimates Grid -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-3">
+                                <div class="text-center">
+                                    <div class="text-muted small">1M</div>
+                                    <div class="fw-bold" style="font-size: 1.2rem; color: ${return1M.startsWith('-') ? '#dc3545' : '#28a745'};">${return1M}</div>
+                                </div>
+                            </div>
+                            <div class="col-3">
+                                <div class="text-center">
+                                    <div class="text-muted small">6M</div>
+                                    <div class="fw-bold" style="font-size: 1.2rem; color: ${return6M.startsWith('-') ? '#dc3545' : '#28a745'};">${return6M}</div>
+                                </div>
+                            </div>
+                            <div class="col-3">
+                                <div class="text-center">
+                                    <div class="text-muted small">1Y</div>
+                                    <div class="fw-bold" style="font-size: 1.2rem; color: ${return1Y.startsWith('-') ? '#dc3545' : '#28a745'};">${return1Y}</div>
+                                </div>
+                            </div>
+                            <div class="col-3">
+                                <div class="text-center">
+                                    <div class="text-muted small">3Y</div>
+                                    <div class="fw-bold" style="font-size: 1.2rem; color: ${return3Y.startsWith('-') ? '#dc3545' : '#28a745'};">${return3Y}</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Position Tickers -->
+                        <div class="mb-3">
+                            ${longTickers.length > 0 ? `
+                            <div class="mb-2">
+                                <span class="text-success me-2"><i class="fas fa-arrow-up"></i> Long:</span>
+                                ${longTickers.map(t => `<span class="badge bg-success bg-opacity-25 text-success me-1" style="padding: 0.4rem 0.8rem;">${t}</span>`).join('')}
+                                ${longs.length > 4 ? `<span class="text-muted small">+${longs.length - 4} more</span>` : ''}
+                            </div>
+                            ` : ''}
+                            ${shortTickers.length > 0 ? `
+                            <div>
+                                <span class="text-danger me-2"><i class="fas fa-arrow-down"></i> Short:</span>
+                                ${shortTickers.map(t => `<span class="badge bg-danger bg-opacity-25 text-danger me-1" style="padding: 0.4rem 0.8rem;">${t}</span>`).join('')}
+                                ${shorts.length > 4 ? `<span class="text-muted small">+${shorts.length - 4} more</span>` : ''}
+                            </div>
+                            ` : ''}
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-primary" onclick="event.stopPropagation(); alert('Invest feature coming soon!')" style="border-radius: 10px; padding: 0.5rem 1.5rem;">
+                                <i class="fas fa-plus"></i> Invest
+                            </button>
+                            <button class="btn btn-outline-primary" onclick="event.stopPropagation(); viewTradeDetails(${trade.id})" style="border-radius: 10px; padding: 0.5rem 1.5rem;">
+                                <i class="fas fa-eye"></i> View Details
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            return card;
         }
         
         function escapeHtml(text) {
