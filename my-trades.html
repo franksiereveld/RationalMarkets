@@ -1362,7 +1362,8 @@
                     throw new Error('Failed to load trade details');
                 }
                 
-                const trade = await response.json();
+                const data = await response.json();
+                const trade = data.trade || data; // Handle both {success: true, trade: {...}} and direct trade object
                 
                 // Display the trade in the analysis results section
                 displayAnalysis(trade);
