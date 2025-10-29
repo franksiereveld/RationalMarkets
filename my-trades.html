@@ -573,22 +573,29 @@
                 return new bootstrap.Tooltip(tooltipTriggerEl);
             });
 
+            // Smart Position Categorization - Only show sections that have positions
             // Long positions
             if (analysis.longs && analysis.longs.length > 0) {
                 document.getElementById('longPositionsCard').style.display = 'block';
                 displayPositionsWithCharts(analysis.longs, 'longPositions', true);
+            } else {
+                document.getElementById('longPositionsCard').style.display = 'none';
             }
 
             // Short positions
             if (analysis.shorts && analysis.shorts.length > 0) {
                 document.getElementById('shortPositionsCard').style.display = 'block';
                 displayPositionsWithCharts(analysis.shorts, 'shortPositions', false);
+            } else {
+                document.getElementById('shortPositionsCard').style.display = 'none';
             }
             
             // Derivatives (if any)
             if (analysis.derivatives && analysis.derivatives.length > 0) {
                 document.getElementById('derivativesCard').style.display = 'block';
                 displayPositionsWithCharts(analysis.derivatives, 'derivativePositions', true);
+            } else {
+                document.getElementById('derivativesCard').style.display = 'none';
             }
 
             // AI rationale (moved BEFORE metrics per user request)
@@ -718,6 +725,11 @@
                         <span class="badge ${isLong ? 'bg-success' : 'bg-danger'}">${position.allocation} ${isLong ? 'Long' : 'Short'}</span>
                     </div>
                     
+                    <!-- Position Rationale (ABOVE chart, prominent) -->
+                    <div class="mb-3 p-3" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border-left: 4px solid ${isLong ? '#28a745' : '#dc3545'}; border-radius: 8px;">
+                        <p class="mb-0" style="font-size: 1.05rem; line-height: 1.6; color: #1565c0;"><strong>${position.rationale}</strong></p>
+                    </div>
+                    
                     <!-- Stock Chart -->
                     <div class="mb-3">
                         <div class="chart-container" style="height: 350px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; position: relative; overflow: hidden;">
@@ -783,8 +795,7 @@
                         </div>
                     </div>
                     
-                    <!-- Rationale -->
-                    <p class="text-muted mb-0">${position.rationale}</p>
+
                 `;
                 console.log('[displayPositionsWithCharts] Appending card for', position.ticker);
                 container.appendChild(card);
